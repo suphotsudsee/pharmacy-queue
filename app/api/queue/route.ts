@@ -1,6 +1,6 @@
 export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from 'next/server';
-import { addQueue, getSnapshot } from '@/lib/store';
+import { addQueue, getSnapshot, resetQueue } from '@/lib/store';
 import { Room } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -20,6 +20,10 @@ export async function POST(req: NextRequest) {
   if (body.action === 'add') {
     const item = addQueue(room);
     return NextResponse.json({ ok: true, added: item });
+  }
+  if (body.action === 'reset') {
+    resetQueue(room);
+    return NextResponse.json({ ok: true });
   }
   return NextResponse.json({ ok: false, error: 'Unknown action' }, { status: 400 });
 }

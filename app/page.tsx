@@ -56,6 +56,19 @@ function QueueControl({ room, title, tail }: { room: Room; title: string; tail: 
     await refresh();
   };
 
+  const reset = async () => {
+    const ok = window.confirm('ต้องการรีเฟรชข้อมูลทั้งหมดหรือไม่?');
+    if (!ok) return;
+    setLoading(true);
+    await fetch(`/api/queue?room=${room}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'reset' })
+    });
+    setLoading(false);
+    await refresh();
+  };
+
   const current = snap?.current ?? null;
   const waiting = (snap?.items ?? []).filter(i => i.status === 'waiting').map(i => i.number);
   const called = (snap?.items ?? []).filter(i => i.status === 'calling').map(i => i.number);
@@ -99,7 +112,7 @@ function QueueControl({ room, title, tail }: { room: Room; title: string; tail: 
           <h2 style={{ marginTop: 0 }}>จัดการคิว</h2>
           <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
             <button onClick={add} disabled={loading} style={btnPri}>ลงทะเบียนคิวใหม่</button>
-            <button onClick={refresh} disabled={loading} style={btnSec}>รีเฟรช</button>
+            <button onClick={reset} disabled={loading} style={btnSec}>รีเฟรช</button>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <Panel title="กำลังเรียก" items={called} highlight />
