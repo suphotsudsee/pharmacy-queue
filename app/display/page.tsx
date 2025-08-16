@@ -6,7 +6,8 @@ type Snapshot = { current: number|null; items: { number: number; status: string;
 
 export default function DisplayPage() {
   return (
-    <main style={{ width: '100%', height: '100vh', background: '#030712', color: '#e5e7eb', display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+    <main style={{ width: '100%', height: '100vh', background: '#030712', color: '#e5e7eb', display: 'grid', gridTemplateColumns: '1fr 1fr', position: 'relative' }}>
+      <div style={{ position: 'absolute', top: 0, bottom: 0, left: '50%', width: 4, background: 'white', transform: 'translateX(-50%)' }} />
       <Board room="exam" />
       <Board room="pharmacy" />
     </main>
