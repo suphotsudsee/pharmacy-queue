@@ -71,6 +71,14 @@ function Board({ room }: { room: Room }) {
   <section style={{ padding: '32px 28px', position: 'relative' }}>
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
       <h2 style={{ margin: 0, fontSize: 32, fontWeight: 800 }}>คิวที่ข้าม</h2>
+    </div>
+
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 12, marginTop: 16 }}>
+      {skipped.length === 0 ? <div style={{ opacity: 0.7, gridColumn: '1 / -1' }}>ไม่มีคิวที่ข้าม</div> : null}
+      {skipped.map(n => <Card key={n} n={n} tone="skipped" />)}
+    </div>
+
+    <div style={{ position: 'absolute', bottom: 16, left: 28, opacity: 0.6 }}>
       <div style={{ display: 'flex', gap: 10 }}>
         <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 14 }}>
           <input type="checkbox" checked={chime} onChange={e => setChime(e.target.checked)} />
@@ -79,11 +87,6 @@ function Board({ room }: { room: Room }) {
         <button onClick={toggleFull} style={btn()}>เต็มจอ</button>
         <button onClick={refresh} style={btn()}>รีเฟรช</button>
       </div>
-    </div>
-
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginTop: 16 }}>
-      {skipped.length === 0 ? <div style={{ opacity: 0.7, gridColumn: '1 / -1' }}>ไม่มีคิวที่ข้าม</div> : null}
-      {skipped.map(n => <Card key={n} n={n} tone="skipped" />)}
     </div>
 
     <div style={{ position: 'absolute', bottom: 16, right: 28, opacity: 0.6, fontSize: 12 }}>

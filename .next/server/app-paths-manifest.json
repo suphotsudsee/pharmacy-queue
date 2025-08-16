@@ -1,5 +1,7 @@
 {
   "/api/queue/route": "app/api/queue/route.js",
   "/page": "app/page.js",
+  "/api/queue/done/route": "app/api/queue/done/route.js",
+  "/api/queue/next/route": "app/api/queue/next/route.js",
   "/display/page": "app/display/page.js"
 }
