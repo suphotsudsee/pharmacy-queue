@@ -1,4 +1,4 @@
-// File: C:\pharmacy-queue-electron-display-counter-persist-v4\app\api\queue\route.ts
+// File: C:\fullstack\pharmacy-queue\app\api\queue\route.ts
 import * as entry from '../../../../../app/api/queue/route.js'
 import type { NextRequest } from 'next/server.js'
 

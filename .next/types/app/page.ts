@@ -1,4 +1,4 @@
-// File: C:\pharmacy-queue-electron-display-counter-persist-v4\app\page.tsx
+// File: C:\fullstack\pharmacy-queue\app\page.tsx
 import * as entry from '../../../app/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

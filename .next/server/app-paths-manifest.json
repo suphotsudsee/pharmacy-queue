@@ -1,10 +1,4 @@
 {
   "/api/queue/route": "app/api/queue/route.js",
-  "/page": "app/page.js",
-  "/api/queue/repeat/route": "app/api/queue/repeat/route.js",
-  "/api/gt-tts/route": "app/api/gt-tts/route.js",
-  "/api/gt-tts/file/[id]/route": "app/api/gt-tts/file/[id]/route.js",
-  "/api/queue/next/route": "app/api/queue/next/route.js",
-  "/api/queue/skip/route": "app/api/queue/skip/route.js",
-  "/display/page": "app/display/page.js"
+  "/page": "app/page.js"
 }
