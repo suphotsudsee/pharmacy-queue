@@ -86,6 +86,19 @@ export function nextQueue(room: Room) {
 
 export function repeatCurrent(room: Room) { return state[room].current; }
 
+export function recallSkipped(room: Room, num: number) {
+  const st = state[room];
+  const item = st.items.find(i => i.number === num && i.status === 'skipped');
+  if (!item) return st.current;
+  if (st.current !== null) {
+    const cur = st.items.find(i => i.number === st.current);
+    if (cur && cur.status === 'calling') cur.status = 'waiting';
+  }
+  item.status = 'calling';
+  st.current = num;
+  return st.current;
+}
+
 export function skipCurrent(room: Room) {
   const st = state[room];
   if (st.current === null) return null;
