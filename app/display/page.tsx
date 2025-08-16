@@ -42,7 +42,7 @@ function Board({ room }: { room: Room }) {
   const skipped = (snap?.items ?? [])
     .filter(i => i.status === 'skipped')
     .map(i => i.number)
-    .slice(0, 50);
+    .slice(0, 20);
 
   const toggleFull = async () => {
     try {
@@ -73,7 +73,7 @@ function Board({ room }: { room: Room }) {
       <h2 style={{ margin: 0, fontSize: 32, fontWeight: 800 }}>คิวที่ข้าม</h2>
     </div>
 
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(9, 1fr)', gap: 12, marginTop: 16 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 10, marginTop: 16 }}>
       {skipped.length === 0 ? <div style={{ opacity: 0.7, gridColumn: '1 / -1' }}>ไม่มีคิวที่ข้าม</div> : null}
       {skipped.map(n => <Card key={n} n={n} tone="skipped" />)}
     </div>
@@ -101,7 +101,7 @@ function Card({ n, tone }: { n: number; tone: 'calling'|'waiting'|'skipped' }) {
   const bg = tone === 'calling' ? '#0ea5e9' : tone === 'skipped' ? '#dc2626' : '#111827';
   const fg = tone === 'calling' ? 'black' : '#e5e7eb';
   return (
-    <div style={{ background: bg, color: fg, borderRadius: 16, padding: '22px 18px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '6vh' }}>
+    <div style={{ background: bg, color: fg, borderRadius: 16, padding: '2px 18px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '4vh' }}>
       {n}
     </div>
   );
