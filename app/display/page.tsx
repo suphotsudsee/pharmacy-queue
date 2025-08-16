@@ -42,7 +42,7 @@ function Board({ room }: { room: Room }) {
   const skipped = (snap?.items ?? [])
     .filter(i => i.status === 'skipped')
     .map(i => i.number)
-    .slice(0, 8);
+    .slice(0, 50);
 
   const toggleFull = async () => {
     try {
@@ -73,7 +73,7 @@ function Board({ room }: { room: Room }) {
       <h2 style={{ margin: 0, fontSize: 32, fontWeight: 800 }}>คิวที่ข้าม</h2>
     </div>
 
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 12, marginTop: 16 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(9, 1fr)', gap: 12, marginTop: 16 }}>
       {skipped.length === 0 ? <div style={{ opacity: 0.7, gridColumn: '1 / -1' }}>ไม่มีคิวที่ข้าม</div> : null}
       {skipped.map(n => <Card key={n} n={n} tone="skipped" />)}
     </div>
