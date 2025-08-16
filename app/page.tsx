@@ -47,7 +47,7 @@ function QueueControl({ room, title, tail }: { room: Room; title: string; tail: 
   const callRepeat = async () => action(`/api/queue/repeat?room=${room}`, async (n) => { if (n) await speakCall(n, tail); });
   const callSkip = async () => action(`/api/queue/skip?room=${room}`);
   const callDone = async () => action(`/api/queue/done?room=${room}`);
-  const callSkippedNumber = async (n:number) => action(`/api/queue/call?room=${room}&number=${n}`, async (m) => { if (m) await speakCall(m, tail); });
+  const callNumber = async (n:number) => action(`/api/queue/call?room=${room}&number=${n}`, async (m) => { if (m) await speakCall(m, tail); });
 
   const add = async () => {
     setLoading(true);
@@ -103,9 +103,9 @@ function QueueControl({ room, title, tail }: { room: Room; title: string; tail: 
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <Panel title="กำลังเรียก" items={called} highlight />
-            <Panel title="รอเรียก" items={waiting} />
+            <Panel title="รอเรียก" items={waiting} onItemClick={callNumber} />
             <Panel title="เสร็จสิ้น" items={done} />
-            <Panel title="ถูกข้าม" items={skipped} onItemClick={callSkippedNumber} />
+            <Panel title="ถูกข้าม" items={skipped} onItemClick={callNumber} />
           </div>
         </div>
       </div>
