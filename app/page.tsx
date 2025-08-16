@@ -6,21 +6,24 @@ import type { Room } from '@/lib/types';
 
 type Snapshot = { current: number|null; items: { number: number; status: string; createdAt: number }[]; tailNumber: number; counterName: string };
 
-const tailText: Record<Room,string> = { exam: 'กรุณาติดต่อห้องตรวจ', pharmacy: 'กรุณาติดต่อรับยา' };
-
 export default function Page() {
+  const [tails, setTails] = React.useState<Record<Room, string>>({
+    exam: 'กรุณาติดต่อห้องตรวจ',
+    pharmacy: 'กรุณาติดต่อรับยา'
+  });
+
   return (
     <main style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, margin: '20px auto', padding: 20, maxWidth: 1400 }}>
-      <QueueControl room="exam" title="ระบบเรียกคิวห้องตรวจ" />
-      <QueueControl room="pharmacy" title="ระบบเรียกคิวห้องยา" />
+      <QueueControl room="exam" title="ระบบเรียกคิวห้องตรวจ" tail={tails.exam} />
+      <QueueControl room="pharmacy" title="ระบบเรียกคิวห้องยา" tail={tails.pharmacy} />
       <div style={{ gridColumn: '1 / -1' }}>
-        <AudioAnnouncer />
+        <AudioAnnouncer tails={tails} setTails={setTails} />
       </div>
     </main>
   );
 }
 
-function QueueControl({ room, title }: { room: Room; title: string }) {
+function QueueControl({ room, title, tail }: { room: Room; title: string; tail: string }) {
   const [snap, setSnap] = React.useState<Snapshot | null>(null);
   const [loading, setLoading] = React.useState(false);
 
@@ -40,8 +43,8 @@ function QueueControl({ room, title }: { room: Room; title: string }) {
     if (after) after(data.current);
   };
 
-  const callNext = async () => action(`/api/queue/next?room=${room}`, async (n) => { if (n) await speakCall(n, tailText[room]); });
-  const callRepeat = async () => action(`/api/queue/repeat?room=${room}`, async (n) => { if (n) await speakCall(n, tailText[room]); });
+  const callNext = async () => action(`/api/queue/next?room=${room}`, async (n) => { if (n) await speakCall(n, tail); });
+  const callRepeat = async () => action(`/api/queue/repeat?room=${room}`, async (n) => { if (n) await speakCall(n, tail); });
   const callSkip = async () => action(`/api/queue/skip?room=${room}`);
   const callDone = async () => action(`/api/queue/done?room=${room}`);
 
