@@ -58,7 +58,7 @@ function Board({ room }: { room: Room }) {
 <div style={{ display: 'grid', gridTemplateRows: '1fr 1fr', height: '100vh' }}>
   {/* ส่วนบน: แสดงตัวเลข */}
   <section style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-    <div style={{ position: 'absolute', top: 20, left: 24, fontSize: 28, fontWeight: 800, opacity: 0.9 }}>{snap?.counterName ?? (room === 'exam' ? 'ห้องตรวจ' : 'ช่องยา')}</div>
+    <div style={{ position: 'absolute', top: 20, left: 24, fontSize: 32, fontWeight: 800, opacity: 1.2 }}>{snap?.counterName ?? (room === 'exam' ? 'ห้องตรวจ' : 'ช่องยา')}</div>
     <div>
       <div style={{ textAlign: 'center', opacity: 0.8, fontSize: 28, letterSpacing: 1 }}>ขณะนี้กำลังเรียก</div>
       <div style={{ fontSize: '22vw', lineHeight: 1, fontWeight: 900, textAlign: 'center', marginTop: 10 }}>
