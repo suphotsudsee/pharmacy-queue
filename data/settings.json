@@ -1,3 +1,4 @@
 {
-  "counterName": "ช่องยา 2"
+  "exam": { "counterName": "ห้องตรวจ 1" },
+  "pharmacy": { "counterName": "ช่องยา 1" }
 }

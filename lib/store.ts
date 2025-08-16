@@ -1,89 +1,114 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { Room } from './types';
 
 const settingsFile = path.join(process.cwd(), 'data', 'settings.json');
 
-function loadSettings() {
+type Settings = Record<Room, { counterName: string }>;
+
+function loadSettings(): Settings {
   try {
     const raw = fs.readFileSync(settingsFile, 'utf8');
-    return JSON.parse(raw);
+    const data = JSON.parse(raw);
+    return {
+      exam: { counterName: data?.exam?.counterName ?? 'ห้องตรวจ 1' },
+      pharmacy: { counterName: data?.pharmacy?.counterName ?? 'ช่องยา 1' },
+    };
   } catch {
-    return { counterName: 'ช่องยา 1' };
+    return {
+      exam: { counterName: 'ห้องตรวจ 1' },
+      pharmacy: { counterName: 'ช่องยา 1' },
+    };
   }
 }
 
-function saveSettings(name: string) {
+function saveSettingsFromState(state: State) {
   try {
-    fs.writeFileSync(settingsFile, JSON.stringify({ counterName: name }, null, 2), 'utf8');
+    const data: Settings = {
+      exam: { counterName: state.exam.counterName },
+      pharmacy: { counterName: state.pharmacy.counterName },
+    };
+    fs.writeFileSync(settingsFile, JSON.stringify(data, null, 2), 'utf8');
   } catch (e) {
     console.error('Failed to save settings:', e);
   }
 }
 
 export type QueueItem = { number: number; status: 'waiting'|'calling'|'done'|'skipped'; createdAt: number };
-type State = {
+type RoomState = {
   current: number | null;
   items: QueueItem[];
   tailNumber: number;
   counterName: string;
 };
+type State = Record<Room, RoomState>;
+
 const g = global as any;
-if (!g.__QUEUE_STATE__) {
-  const initialSettings = loadSettings();
-  g.__QUEUE_STATE__ = { current: null, items: [], tailNumber: 0, counterName: initialSettings.counterName } as State;
+if (!g.__MULTI_QUEUE_STATE__) {
+  const s = loadSettings();
+  g.__MULTI_QUEUE_STATE__ = {
+    exam: { current: null, items: [], tailNumber: 0, counterName: s.exam.counterName },
+    pharmacy: { current: null, items: [], tailNumber: 0, counterName: s.pharmacy.counterName },
+  } as State;
 }
-export const state: State = g.__QUEUE_STATE__;
-export function addQueue(): QueueItem {
-  const num = ++state.tailNumber;
+export const state: State = g.__MULTI_QUEUE_STATE__;
+
+export function addQueue(room: Room): QueueItem {
+  const st = state[room];
+  const num = ++st.tailNumber;
   const item: QueueItem = { number: num, status: 'waiting', createdAt: Date.now() };
-  state.items.push(item);
+  st.items.push(item);
   return item;
 }
-export function getSnapshot() {
+
+export function getSnapshot(room: Room) {
+  const st = state[room];
   return {
-    current: state.current,
-    items: state.items,
-    tailNumber: state.tailNumber,
-    counterName: state.counterName,
+    current: st.current,
+    items: st.items,
+    tailNumber: st.tailNumber,
+    counterName: st.counterName,
   };
 }
-export function nextQueue() {
-  // finish current if still calling
-  if (state.current !== null) {
-    const cur = state.items.find(i => i.number === state.current);
+
+export function nextQueue(room: Room) {
+  const st = state[room];
+  if (st.current !== null) {
+    const cur = st.items.find(i => i.number === st.current);
     if (cur && cur.status === 'calling') cur.status = 'done';
   }
-  // pick next waiting
-  const next = state.items.find(i => i.status === 'waiting');
-  if (!next) { state.current = null; return null; }
+  const next = st.items.find(i => i.status === 'waiting');
+  if (!next) { st.current = null; return null; }
   next.status = 'calling';
-  state.current = next.number;
+  st.current = next.number;
   return next.number;
 }
-export function repeatCurrent() { return state.current; }
-export function skipCurrent() {
-  if (state.current === null) return null;
-  const cur = state.items.find(i => i.number === state.current);
+
+export function repeatCurrent(room: Room) { return state[room].current; }
+
+export function skipCurrent(room: Room) {
+  const st = state[room];
+  if (st.current === null) return null;
+  const cur = st.items.find(i => i.number === st.current);
   if (cur) cur.status = 'skipped';
-  // pick next
-  const next = state.items.find(i => i.status === 'waiting');
-  state.current = next ? next.number : null;
+  const next = st.items.find(i => i.status === 'waiting');
+  st.current = next ? next.number : null;
   if (next) next.status = 'calling';
-  return state.current;
+  return st.current;
 }
-export function doneCurrent() {
-  if (state.current === null) return null;
-  const cur = state.items.find(i => i.number === state.current);
+
+export function doneCurrent(room: Room) {
+  const st = state[room];
+  if (st.current === null) return null;
+  const cur = st.items.find(i => i.number === st.current);
   if (cur) cur.status = 'done';
-  // pick next
-  const next = state.items.find(i => i.status === 'waiting');
-  state.current = next ? next.number : null;
+  const next = st.items.find(i => i.status === 'waiting');
+  st.current = next ? next.number : null;
   if (next) next.status = 'calling';
-  return state.current;
+  return st.current;
 }
 
-
-export function setCounterName(name: string) {
-  saveSettings(name);
-  state.counterName = name || 'ช่องยา 1';
+export function setCounterName(room: Room, name: string) {
+  state[room].counterName = name || (room === 'exam' ? 'ห้องตรวจ 1' : 'ช่องยา 1');
+  saveSettingsFromState(state);
 }
