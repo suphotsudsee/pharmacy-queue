@@ -1,0 +1,1 @@
+Replace icon.ico with your own program icon for a nicer installer.
