@@ -123,6 +123,13 @@ export function doneCurrent(room: Room) {
   return st.current;
 }
 
+export function resetQueue(room: Room) {
+  const st = state[room];
+  st.current = null;
+  st.items = [];
+  st.tailNumber = 0;
+}
+
 export function setCounterName(room: Room, name: string) {
   state[room].counterName = name || (room === 'exam' ? 'ห้องตรวจ 1' : 'ช่องยา 1');
   saveSettingsFromState(state);
