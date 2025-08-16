@@ -1,8 +1,15 @@
 export const runtime = 'nodejs';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { nextQueue } from '@/lib/store';
+import { Room } from '@/lib/types';
 export const dynamic = 'force-dynamic';
-export async function POST() {
-  const n = nextQueue();
+function getRoom(req: NextRequest): Room {
+  const r = req.nextUrl.searchParams.get('room');
+  return r === 'exam' || r === 'pharmacy' ? r : 'pharmacy';
+}
+
+export async function POST(req: NextRequest) {
+  const room = getRoom(req);
+  const n = nextQueue(room);
   return NextResponse.json({ ok: true, current: n });
 }

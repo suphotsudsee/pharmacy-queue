@@ -2,17 +2,32 @@
 import React from 'react';
 import AudioAnnouncer from '@/components/AudioAnnouncer';
 import { speakCall } from '@/lib/tts';
+import type { Room } from '@/lib/types';
 
 type Snapshot = { current: number|null; items: { number: number; status: string; createdAt: number }[]; tailNumber: number; counterName: string };
 
+const tailText: Record<Room,string> = { exam: 'กรุณาติดต่อห้องตรวจ', pharmacy: 'กรุณาติดต่อรับยา' };
+
 export default function Page() {
+  return (
+    <main style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, margin: '20px auto', padding: 20, maxWidth: 1400 }}>
+      <QueueControl room="exam" title="ระบบเรียกคิวห้องตรวจ" />
+      <QueueControl room="pharmacy" title="ระบบเรียกคิวห้องยา" />
+      <div style={{ gridColumn: '1 / -1' }}>
+        <AudioAnnouncer />
+      </div>
+    </main>
+  );
+}
+
+function QueueControl({ room, title }: { room: Room; title: string }) {
   const [snap, setSnap] = React.useState<Snapshot | null>(null);
   const [loading, setLoading] = React.useState(false);
 
   const refresh = React.useCallback(async () => {
-    const res = await fetch('/api/queue', { cache: 'no-store' });
+    const res = await fetch(`/api/queue?room=${room}`, { cache: 'no-store' });
     setSnap(await res.json());
-  }, []);
+  }, [room]);
 
   React.useEffect(() => { refresh(); const t = setInterval(refresh, 2000); return () => clearInterval(t); }, [refresh]);
 
@@ -25,14 +40,14 @@ export default function Page() {
     if (after) after(data.current);
   };
 
-  const callNext = async () => action('/api/queue/next', async (n) => { if (n) await speakCall(n); });
-  const callRepeat = async () => action('/api/queue/repeat', async (n) => { if (n) await speakCall(n); });
-  const callSkip = async () => action('/api/queue/skip');
-  const callDone = async () => action('/api/queue/done');
+  const callNext = async () => action(`/api/queue/next?room=${room}`, async (n) => { if (n) await speakCall(n, tailText[room]); });
+  const callRepeat = async () => action(`/api/queue/repeat?room=${room}`, async (n) => { if (n) await speakCall(n, tailText[room]); });
+  const callSkip = async () => action(`/api/queue/skip?room=${room}`);
+  const callDone = async () => action(`/api/queue/done?room=${room}`);
 
   const add = async () => {
     setLoading(true);
-    await fetch('/api/queue', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'add' }) });
+    await fetch(`/api/queue?room=${room}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'add' }) });
     setLoading(false);
     await refresh();
   };
@@ -44,29 +59,26 @@ export default function Page() {
   const skipped = (snap?.items ?? []).filter(i => i.status === 'skipped').map(i => i.number);
 
   return (
-    <main style={{ maxWidth: 1100, margin: '40px auto', padding: 20 }}>
-      <h1 style={{ fontSize: 36, fontWeight: 800, marginBottom: 6 }}>ระบบเรียกคิวห้องยา</h1>
-      <p style={{ opacity: 0.8, marginBottom: 16 }}>แสดงคิวล่าสุด, รายการคิว, และประกาศเสียงภาษาไทย</p>
-
-      
-<div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '8px 0 20px' }}>
-  <label style={{ opacity: 0.85 }}>ชื่อช่องบริการ:</label>
-  <input
-    value={snap?.counterName ?? ''}
-    onChange={async (e) => {
-      const val = e.target.value;
-      await fetch('/api/settings/counter', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ counterName: val })
-      });
-      await refresh();
-    }}
-    style={{ background: '#0b1020', border: '1px solid #243056', color: 'white', padding: '8px 10px', borderRadius: 8, minWidth: 220 }}
-    placeholder="เช่น ช่องยา 1"
-  />
-</div>
-<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+    <div style={{ background: '#0b1020', borderRadius: 16, padding: 16 }}>
+      <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 6 }}>{title}</h1>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '8px 0 20px' }}>
+        <label style={{ opacity: 0.85 }}>ชื่อช่องบริการ:</label>
+        <input
+          value={snap?.counterName ?? ''}
+          onChange={async (e) => {
+            const val = e.target.value;
+            await fetch(`/api/settings/counter?room=${room}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ counterName: val })
+            });
+            await refresh();
+          }}
+          style={{ background: '#0b1020', border: '1px solid #243056', color: 'white', padding: '8px 10px', borderRadius: 8, minWidth: 220 }}
+          placeholder="เช่น ช่อง 1"
+        />
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <div style={{ background: '#121738', borderRadius: 16, padding: 16 }}>
           <h2 style={{ marginTop: 0 }}>คิวปัจจุบัน</h2>
           <div style={{ fontSize: 80, fontWeight: 900, textAlign: 'center', lineHeight: '1', margin: '8px 0 16px' }}>
@@ -78,7 +90,6 @@ export default function Page() {
             <button onClick={callSkip} disabled={loading || !current} style={btnWarn}>ข้าม</button>
             <button onClick={callDone} disabled={loading || !current} style={btnOk}>เสร็จสิ้น</button>
           </div>
-          <AudioAnnouncer />
         </div>
         <div style={{ background: '#121738', borderRadius: 16, padding: 16 }}>
           <h2 style={{ marginTop: 0 }}>จัดการคิว</h2>
@@ -94,7 +105,7 @@ export default function Page() {
           </div>
         </div>
       </div>
-    </main>
+    </div>
   );
 }
 

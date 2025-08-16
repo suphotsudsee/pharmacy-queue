@@ -1,16 +1,25 @@
-
 'use client';
 import React from 'react';
+import type { Room } from '@/lib/types';
 
 type Snapshot = { current: number|null; items: { number: number; status: string; createdAt: number }[]; tailNumber: number; counterName: string };
 
 export default function DisplayPage() {
+  return (
+    <main style={{ width: '100%', height: '100vh', background: '#030712', color: '#e5e7eb', display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+      <Board room="exam" />
+      <Board room="pharmacy" />
+    </main>
+  );
+}
+
+function Board({ room }: { room: Room }) {
   const [snap, setSnap] = React.useState<Snapshot | null>(null);
   const [lastNumber, setLastNumber] = React.useState<number | null>(null);
   const [chime, setChime] = React.useState(false);
 
   const refresh = React.useCallback(async () => {
-    const res = await fetch('/api/queue', { cache: 'no-store' });
+    const res = await fetch(`/api/queue?room=${room}`, { cache: 'no-store' });
     const data: Snapshot = await res.json();
     const nextCurrent = data.current ?? null;
     if (chime && nextCurrent && nextCurrent !== lastNumber) {
@@ -21,7 +30,7 @@ export default function DisplayPage() {
     }
     setLastNumber(nextCurrent ?? null);
     setSnap(data);
-  }, [chime, lastNumber]);
+  }, [room, chime, lastNumber]);
 
   React.useEffect(() => {
     refresh();
@@ -43,9 +52,9 @@ export default function DisplayPage() {
   };
 
   return (
-    <main style={{ width: '100%', height: '100vh', background: '#030712', color: '#e5e7eb', display: 'grid', gridTemplateColumns: '1.2fr 1fr' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', height: '100%' }}>
       <section style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', borderRight: '4px solid #0f172a', position: 'relative' }}>
-        <div style={{ position: 'absolute', top: 20, left: 24, fontSize: 28, fontWeight: 800, opacity: 0.9 }}>{snap?.counterName ?? 'ช่องยา'}</div>
+        <div style={{ position: 'absolute', top: 20, left: 24, fontSize: 28, fontWeight: 800, opacity: 0.9 }}>{snap?.counterName ?? (room === 'exam' ? 'ห้องตรวจ' : 'ช่องยา')}</div>
         <div>
           <div style={{ textAlign: 'center', opacity: 0.8, fontSize: 28, letterSpacing: 1 }}>ขณะนี้กำลังเรียก</div>
           <div style={{ fontSize: '22vw', lineHeight: 1, fontWeight: 900, textAlign: 'center', marginTop: 10 }}>
@@ -53,7 +62,7 @@ export default function DisplayPage() {
           </div>
         </div>
       </section>
-      <section style={{ padding: '32px 28px' }}>
+      <section style={{ padding: '32px 28px', position: 'relative' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2 style={{ margin: 0, fontSize: 32, fontWeight: 800 }}>คิวถัดไป</h2>
           <div style={{ display: 'flex', gap: 10 }}>
@@ -62,7 +71,7 @@ export default function DisplayPage() {
               เสียงเตือนเมื่อเปลี่ยนหมายเลข
             </label>
             <button onClick={toggleFull} style={btn()}>เต็มจอ</button>
-            <button onClick={() => location.reload()} style={btn()}>รีเฟรช</button>
+            <button onClick={refresh} style={btn()}>รีเฟรช</button>
           </div>
         </div>
 
@@ -73,10 +82,10 @@ export default function DisplayPage() {
         </div>
 
         <div style={{ position: 'absolute', bottom: 16, right: 28, opacity: 0.6, fontSize: 12 }}>
-          ห้องยา · แสดงผลอัตโนมัติทุก 1.5 วินาที
+          {room === 'exam' ? 'ห้องตรวจ' : 'ห้องยา'} · แสดงผลอัตโนมัติทุก 1.5 วินาที
         </div>
       </section>
-    </main>
+    </div>
   );
 }
 
