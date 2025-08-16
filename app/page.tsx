@@ -47,6 +47,7 @@ function QueueControl({ room, title, tail }: { room: Room; title: string; tail: 
   const callRepeat = async () => action(`/api/queue/repeat?room=${room}`, async (n) => { if (n) await speakCall(n, tail); });
   const callSkip = async () => action(`/api/queue/skip?room=${room}`);
   const callDone = async () => action(`/api/queue/done?room=${room}`);
+  const callSkippedNumber = async (n:number) => action(`/api/queue/call?room=${room}&number=${n}`, async (m) => { if (m) await speakCall(m, tail); });
 
   const add = async () => {
     setLoading(true);
@@ -104,7 +105,7 @@ function QueueControl({ room, title, tail }: { room: Room; title: string; tail: 
             <Panel title="กำลังเรียก" items={called} highlight />
             <Panel title="รอเรียก" items={waiting} />
             <Panel title="เสร็จสิ้น" items={done} />
-            <Panel title="ถูกข้าม" items={skipped} />
+            <Panel title="ถูกข้าม" items={skipped} onItemClick={callSkippedNumber} />
           </div>
         </div>
       </div>
@@ -112,13 +113,21 @@ function QueueControl({ room, title, tail }: { room: Room; title: string; tail: 
   );
 }
 
-function Panel({ title, items, highlight=false }: { title: string; items: number[]; highlight?: boolean }) {
+function Panel({ title, items, highlight=false, onItemClick }: { title: string; items: number[]; highlight?: boolean; onItemClick?: (n:number)=>void }) {
   return (
     <div style={{ background: highlight ? '#0e1c4f' : '#0b1020', borderRadius: 12, padding: 12 }}>
       <div style={{ fontWeight: 700, marginBottom: 8 }}>{title}</div>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         {items.length === 0 ? <span style={{ opacity: 0.7 }}>-</span> :
-          items.map(n => <span key={n} style={pill}>{n}</span>)}
+          items.map(n => (
+            <span
+              key={n}
+              style={{...pill, cursor: onItemClick ? 'pointer' : undefined}}
+              onClick={() => onItemClick?.(n)}
+            >
+              {n}
+            </span>
+          ))}
       </div>
     </div>
   );
