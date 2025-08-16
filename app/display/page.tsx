@@ -39,8 +39,10 @@ function Board({ room }: { room: Room }) {
     return () => clearInterval(t);
   }, [refresh]);
 
-  const waiting = (snap?.items ?? []).filter(i => i.status === 'waiting').map(i => i.number).slice(0, 8);
-  const calling = (snap?.items ?? []).filter(i => i.status === 'calling').map(i => i.number);
+  const skipped = (snap?.items ?? [])
+    .filter(i => i.status === 'skipped')
+    .map(i => i.number)
+    .slice(0, 8);
 
   const toggleFull = async () => {
     try {
@@ -65,10 +67,10 @@ function Board({ room }: { room: Room }) {
     </div>
   </section>
 
-  {/* ส่วนล่าง: คิวถัดไป */}
+  {/* ส่วนล่าง: คิวที่ข้าม */}
   <section style={{ padding: '32px 28px', position: 'relative' }}>
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <h2 style={{ margin: 0, fontSize: 32, fontWeight: 800 }}>คิวถัดไป</h2>
+      <h2 style={{ margin: 0, fontSize: 32, fontWeight: 800 }}>คิวที่ข้าม</h2>
       <div style={{ display: 'flex', gap: 10 }}>
         <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 14 }}>
           <input type="checkbox" checked={chime} onChange={e => setChime(e.target.checked)} />
@@ -80,9 +82,8 @@ function Board({ room }: { room: Room }) {
     </div>
 
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginTop: 16 }}>
-      {calling.map(n => <Card key={'c'+n} n={n} tone="calling" />)}
-      {waiting.length === 0 && calling.length === 0 ? <div style={{ opacity: 0.7, gridColumn: '1 / -1' }}>ไม่มีคิวรอ</div> : null}
-      {waiting.map(n => <Card key={n} n={n} tone="waiting" />)}
+      {skipped.length === 0 ? <div style={{ opacity: 0.7, gridColumn: '1 / -1' }}>ไม่มีคิวที่ข้าม</div> : null}
+      {skipped.map(n => <Card key={n} n={n} tone="skipped" />)}
     </div>
 
     <div style={{ position: 'absolute', bottom: 16, right: 28, opacity: 0.6, fontSize: 12 }}>
@@ -93,8 +94,8 @@ function Board({ room }: { room: Room }) {
   );
 }
 
-function Card({ n, tone }: { n: number; tone: 'calling'|'waiting' }) {
-  const bg = tone === 'calling' ? '#0ea5e9' : '#111827';
+function Card({ n, tone }: { n: number; tone: 'calling'|'waiting'|'skipped' }) {
+  const bg = tone === 'calling' ? '#0ea5e9' : tone === 'skipped' ? '#dc2626' : '#111827';
   const fg = tone === 'calling' ? 'black' : '#e5e7eb';
   return (
     <div style={{ background: bg, color: fg, borderRadius: 16, padding: '22px 18px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '6vh' }}>
