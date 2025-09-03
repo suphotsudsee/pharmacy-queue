@@ -10,6 +10,7 @@ const { app, BrowserWindow, screen, Menu, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { spawn, fork } = require('child_process');
+const net = require('net');
 
 // ---------------------- Config ----------------------
 const IS_DEV = !app.isPackaged;
@@ -24,6 +25,15 @@ let devProcess = null;    // dev next process (ถ้าเราสตาร์
 
 // ---------------------- Utils ----------------------
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function isPortAvailable(port) {
+  return new Promise((resolve) => {
+    const tester = net.createServer()
+      .once('error', () => resolve(false))
+      .once('listening', () => tester.close(() => resolve(true)))
+      .listen(port, '127.0.0.1');
+  });
+}
 
 async function ping(url) {
   try {
@@ -145,21 +155,30 @@ Make sure:
   - If using asar: true, add "asarUnpack": [".next/standalone/**"]`);
   }
 
-  // fork server.js
-  serverProcess = fork(serverJs, [], {
-    cwd: standaloneDir,
-    env: { ...process.env, NODE_ENV: 'production', PORT: String(BASE_PORT) },
-    stdio: 'ignore',
-    windowsHide: true
-  });
+  for (const tryPort of CANDIDATE_PORTS) {
+    if (!(await isPortAvailable(tryPort))) continue;
+    try {
+      serverProcess = fork(serverJs, [], {
+        cwd: standaloneDir,
+        env: { ...process.env, NODE_ENV: 'production', PORT: String(tryPort) },
+        stdio: 'ignore',
+        windowsHide: true
+      });
 
-  const baseUrl = `http://localhost:${BASE_PORT}`;
-  try {
-    await waitFor(`${baseUrl}${HEALTH_PATH}`, 120_000);
-  } catch {
-    await waitFor(baseUrl, 120_000);
+      const baseUrl = `http://localhost:${tryPort}`;
+      try {
+        await waitFor(`${baseUrl}${HEALTH_PATH}`, 120_000);
+      } catch {
+        await waitFor(baseUrl, 120_000);
+      }
+      return baseUrl;
+    } catch (err) {
+      try { if (serverProcess && !serverProcess.killed) serverProcess.kill(); } catch {}
+      continue;
+    }
   }
-  return baseUrl;
+
+  throw new Error('Failed to start Next server on any port');
 }
 
 // ---------------------- Windows/Process Safety ----------------------
