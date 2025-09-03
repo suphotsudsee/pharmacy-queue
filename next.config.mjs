@@ -3,6 +3,7 @@
 const nextConfig = {
   reactStrictMode: true,
   experimental: { appDir: true },
+  output: 'standalone',
   webpack: (config, { dev }) => {
     if (dev && config.cache && config.cache.type === 'filesystem') {
       // Disable FS cache in dev to avoid ENOENT rename issues on some Windows setups

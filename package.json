@@ -11,34 +11,39 @@
     "electron:build": "next build && electron-builder"
   },
   "dependencies": {
+    "@google-cloud/text-to-speech": "^6.3.0",
     "next": "14.2.5",
     "react": "18.3.1",
     "react-dom": "18.3.1"
   },
   "devDependencies": {
-    "typescript": "5.5.3",
     "@types/node": "20.11.30",
     "@types/react": "18.2.79",
     "@types/react-dom": "18.2.25",
+    "electron": "31.3.0",
+    "electron-builder": "^24.6.4",
     "eslint": "8.57.0",
     "eslint-config-next": "14.2.5",
-    "electron": "31.3.0",
-    "electron-builder": "24.13.3"
+    "typescript": "5.5.3"
   },
   "main": "electron-main.js",
   "build": {
     "appId": "com.pharmacy.queue",
     "productName": "Pharmacy Queue",
     "files": [
+      "electron-main.js",
       "app/**/*",
       "components/**/*",
       "lib/**/*",
       "public/**/*",
+      ".next/standalone/**",
+      ".next/static/**",
       "next.config.mjs",
       "package.json",
-      "tsconfig.json",
-      ".next/**/*"
+      "tsconfig.json"
     ],
+    "asar": true,
+    "asarUnpack": [".next/standalone/**"],
     "win": {
       "target": "nsis",
       "icon": "public/icon.ico"
