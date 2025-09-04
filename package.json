@@ -46,11 +46,7 @@
     "asarUnpack": [".next/standalone/**"],
     "win": {
       "target": "nsis",
-      "icon": "public/icon.ico",
-      "arch": [
-        "x64",
-        "ia32"
-      ]
+      "icon": "public/icon.ico"
     },
     "directories": {
       "buildResources": "public",
