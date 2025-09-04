@@ -46,10 +46,22 @@
     "asarUnpack": [".next/standalone/**"],
     "win": {
       "target": "nsis",
-      "icon": "public/icon.ico"
+      "icon": "public/icon.ico",
+      "arch": [
+        "x64",
+        "ia32"
+      ]
     },
     "directories": {
-      "buildResources": "public"
+      "buildResources": "public",
+      "output": "dist"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
     }
   }
 }
