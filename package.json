@@ -2,14 +2,16 @@
   "name": "pharmacy-queue-tts-local-v5",
   "version": "1.0.0",
   "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "electron:dev": "electron .",
-    "electron:build": "next build && electron-builder"
-  },
+"scripts": {
+  "dev:web": "next dev -p 3000",
+  "build:web": "next build",
+  "start:web": "next start -p 3000",
+  "dev": "npm-run-all -p dev:web dev:electron:wait",
+  "dev:electron:wait": "wait-on tcp:3000 && cross-env NEXT_DEV_SERVER_URL=http://localhost:3000 electron .",
+  "start": "electron .",
+  "pack": "npm run build:web && electron-builder --dir",
+  "dist": "npm run build:web && electron-builder"
+},
   "dependencies": {
     "-": "^0.0.1",
     "@google-cloud/text-to-speech": "^6.3.0",
@@ -31,39 +33,34 @@
     "typescript": "5.5.3"
   },
   "main": "electron-main.js",
-  "build": {
-    "appId": "com.pharmacy.queue",
-    "productName": "Pharmacy Queue",
-    "files": [
-      "electron-main.js",
-      ".next/standalone/**",
-      ".next/static/**",
-      "public/**",
-      "app/**",
-      "components/**",
-      "lib/**",
-      "next.config.mjs",
-      "package.json",
-      "tsconfig.json"
-    ],
-    "asar": true,
-    "asarUnpack": [
-      ".next/standalone/**"
-    ],
-    "win": {
-      "target": "nsis",
-      "icon": "public/icon.ico"
-    },
-    "directories": {
-      "buildResources": "public",
-      "output": "dist"
-    },
-    "nsis": {
-      "oneClick": false,
-      "perMachine": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
-    }
+"build": {
+  "appId": "com.pharmacy.queue",
+  "productName": "Pharmacy Queue",
+  "files": [
+    ".next/**",
+    "public/**",
+    "electron/**",
+    "electron-main.js",
+    "next.config.*",
+    "package.json",
+    "tsconfig.json",
+    "app/**",
+    "components/**",
+    "lib/**"
+  ],
+  "directories": {
+    "buildResources": "public",
+    "output": "dist"
+  },
+  "asar": true,
+  "win": { "target": "nsis", "icon": "public/icon.ico" },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true
   }
+}
+
 }
