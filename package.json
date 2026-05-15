@@ -13,7 +13,6 @@
   "dist": "npm run build:web && electron-builder"
 },
   "dependencies": {
-    "-": "^0.0.1",
     "@google-cloud/text-to-speech": "^6.3.0",
     "cross-env": "^10.0.0",
     "next": "14.2.5",
