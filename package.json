@@ -4,8 +4,8 @@
   "private": true,
 "scripts": {
   "dev:web": "next dev -p 3000",
-  "build": "next build",
-  "build:web": "next build",
+  "build": "next build && node scripts/prepare-standalone.js",
+  "build:web": "next build && node scripts/prepare-standalone.js",
   "start:web": "next start -p 3000",
   "dev": "npm-run-all -p dev:web dev:electron:wait",
   "electron:dev": "npm run dev",
@@ -54,7 +54,7 @@
     "buildResources": "public",
     "output": "dist"
   },
-  "asar": true,
+  "asar": false,
   "win": {
     "target": "nsis",
     "icon": "icon.ico",
