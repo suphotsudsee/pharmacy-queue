@@ -7,6 +7,7 @@ import type { Room } from '@/lib/types';
 type Snapshot = { current: number|null; items: { number: number; status: string; createdAt: number }[]; tailNumber: number; counterName: string };
 
 export default function Page() {
+  const [showDonate, setShowDonate] = React.useState(false);
   const [tails, setTails] = React.useState<Record<Room, string>>({
     exam: 'กรุณาติดต่อห้องตรวจ',
     pharmacy: 'กรุณาติดต่อรับยา'
@@ -19,7 +20,22 @@ export default function Page() {
       <div style={{ gridColumn: '1 / -1' }}>
         <AudioAnnouncer tails={tails} setTails={setTails} />
       </div>
-      <div style={creditStyle}>Develop by suphot sudsee</div>
+      <div style={creditStyle}>
+        <button type="button" onClick={() => setShowDonate(true)} style={donateButtonStyle}>
+          สนับสนุนค่ากาแฟ
+        </button>
+        <span>Develop by suphot sudsee</span>
+      </div>
+      {showDonate && (
+        <div style={modalBackdropStyle} onClick={() => setShowDonate(false)}>
+          <div style={donateModalStyle} onClick={(e) => e.stopPropagation()}>
+            <button type="button" onClick={() => setShowDonate(false)} style={closeButtonStyle}>x</button>
+            <h2 style={donateTitleStyle}>สนับสนุนผู้พัฒนา</h2>
+            <p style={donateTextStyle}>หากโปรแกรมนี้มีประโยชน์กับคุณ สามารถสนับสนุนค่ากาแฟให้ผู้พัฒนาได้ครับ</p>
+            <img src="/donate-qr.jpg" alt="PromptPay QR code" style={qrStyle} />
+          </div>
+        </div>
+      )}
     </main>
   );
 }
@@ -173,10 +189,75 @@ const creditStyle: React.CSSProperties = {
   position: 'fixed',
   right: 14,
   bottom: 10,
+  display: 'flex',
+  alignItems: 'center',
+  gap: 10,
   color: 'rgba(255,255,255,0.72)',
   fontSize: 12,
   fontWeight: 600,
   letterSpacing: 0,
-  pointerEvents: 'none',
   zIndex: 20
+};
+const donateButtonStyle: React.CSSProperties = {
+  background: '#14b8a6',
+  border: 'none',
+  color: 'white',
+  padding: '7px 10px',
+  borderRadius: 8,
+  cursor: 'pointer',
+  fontSize: 12,
+  fontWeight: 700,
+  letterSpacing: 0
+};
+const modalBackdropStyle: React.CSSProperties = {
+  position: 'fixed',
+  inset: 0,
+  background: 'rgba(2,6,23,0.72)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: 20,
+  zIndex: 100
+};
+const donateModalStyle: React.CSSProperties = {
+  position: 'relative',
+  background: '#ffffff',
+  color: '#111827',
+  borderRadius: 8,
+  padding: 18,
+  width: 'min(420px, 92vw)',
+  boxShadow: '0 20px 60px rgba(0,0,0,0.35)',
+  textAlign: 'center'
+};
+const closeButtonStyle: React.CSSProperties = {
+  position: 'absolute',
+  top: 8,
+  right: 8,
+  width: 30,
+  height: 30,
+  border: 'none',
+  borderRadius: 6,
+  background: '#e5e7eb',
+  color: '#111827',
+  cursor: 'pointer',
+  fontSize: 16,
+  fontWeight: 700
+};
+const donateTitleStyle: React.CSSProperties = {
+  margin: '8px 32px 6px',
+  fontSize: 22,
+  fontWeight: 800,
+  letterSpacing: 0
+};
+const donateTextStyle: React.CSSProperties = {
+  margin: '0 0 12px',
+  color: '#4b5563',
+  fontSize: 14,
+  lineHeight: 1.5
+};
+const qrStyle: React.CSSProperties = {
+  width: '100%',
+  maxWidth: 320,
+  height: 'auto',
+  borderRadius: 6
 };
