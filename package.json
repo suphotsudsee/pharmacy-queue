@@ -4,13 +4,16 @@
   "private": true,
 "scripts": {
   "dev:web": "next dev -p 3000",
+  "build": "next build",
   "build:web": "next build",
   "start:web": "next start -p 3000",
   "dev": "npm-run-all -p dev:web dev:electron:wait",
+  "electron:dev": "npm run dev",
   "dev:electron:wait": "wait-on tcp:3000 && cross-env NEXT_DEV_SERVER_URL=http://localhost:3000 electron .",
   "start": "electron .",
-  "pack": "npm run build:web && electron-builder --dir",
-  "dist": "npm run build:web && electron-builder"
+  "pack": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --dir",
+  "dist": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder",
+  "electron:build": "npm run dist"
 },
   "dependencies": {
     "@google-cloud/text-to-speech": "^6.3.0",
@@ -52,7 +55,11 @@
     "output": "dist"
   },
   "asar": true,
-  "win": { "target": "nsis", "icon": "public/icon.ico" },
+  "win": {
+    "target": "nsis",
+    "icon": "icon.ico",
+    "signAndEditExecutable": false
+  },
   "nsis": {
     "oneClick": false,
     "perMachine": false,
