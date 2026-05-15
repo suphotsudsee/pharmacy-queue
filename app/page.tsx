@@ -13,12 +13,13 @@ export default function Page() {
   });
 
   return (
-    <main style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, margin: '20px auto', padding: 20, maxWidth: 1400 }}>
+    <main style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, margin: '20px auto', padding: '20px 20px 52px', maxWidth: 1400 }}>
       <QueueControl room="exam" title="ระบบเรียกคิวห้องตรวจ" tail={tails.exam} />
       <QueueControl room="pharmacy" title="ระบบเรียกคิวห้องยา" tail={tails.pharmacy} />
       <div style={{ gridColumn: '1 / -1' }}>
         <AudioAnnouncer tails={tails} setTails={setTails} />
       </div>
+      <div style={creditStyle}>Develop by suphot sudsee</div>
     </main>
   );
 }
@@ -167,4 +168,15 @@ const btnWarn: React.CSSProperties = {
 const btnOk: React.CSSProperties = {
   background: '#8b5cf6', border: 'none', color: 'white', padding: '10px 14px',
   borderRadius: 10, cursor: 'pointer', fontWeight: 700
+};
+const creditStyle: React.CSSProperties = {
+  position: 'fixed',
+  right: 14,
+  bottom: 10,
+  color: 'rgba(255,255,255,0.72)',
+  fontSize: 12,
+  fontWeight: 600,
+  letterSpacing: 0,
+  pointerEvents: 'none',
+  zIndex: 20
 };
