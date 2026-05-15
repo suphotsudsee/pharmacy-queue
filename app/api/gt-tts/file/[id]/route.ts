@@ -3,8 +3,9 @@ export const runtime = 'nodejs';
 import { NextRequest } from 'next/server';
 import * as path from 'path';
 import * as fs from 'fs';
+import { dataPath } from '@/lib/paths';
 
-const cacheDir = path.join(process.cwd(), 'data', 'tts-gt-cache');
+const cacheDir = dataPath('tts-gt-cache');
 
 export async function GET(req: NextRequest, ctx: { params: { id: string } }) {
   try {

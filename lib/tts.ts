@@ -10,7 +10,7 @@ export async function speakCall(number: number, tail = 'กรุณาติด
   const data = await res.json();
   if (!res.ok || !data?.id) {
     console.error('GT TTS failed:', data);
-    alert('ไม่สามารถดึงเสียงจาก Google Translate ได้');
+    alert(data?.error || 'ไม่สามารถดึงเสียงจาก Google Translate ได้');
     return;
   }
   const audio = new Audio(`/api/gt-tts/file/${data.id}`);

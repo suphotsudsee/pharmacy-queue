@@ -34,13 +34,16 @@ function QueueControl({ room, title, tail }: { room: Room; title: string; tail: 
 
   React.useEffect(() => { refresh(); const t = setInterval(refresh, 2000); return () => clearInterval(t); }, [refresh]);
 
-  const action = async (url: string, after?: (n:number|null)=>void) => {
+  const action = async (url: string, after?: (n:number|null)=>void|Promise<void>) => {
     setLoading(true);
-    const res = await fetch(url, { method: 'POST' });
-    const data = await res.json();
-    setLoading(false);
-    await refresh();
-    if (after) after(data.current);
+    try {
+      const res = await fetch(url, { method: 'POST' });
+      const data = await res.json();
+      await refresh();
+      if (after) await after(data.current);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const callNext = async () => action(`/api/queue/next?room=${room}`, async (n) => { if (n) await speakCall(n, tail); });

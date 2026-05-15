@@ -1,8 +1,8 @@
 import * as fs from 'fs';
-import * as path from 'path';
 import { Room } from './types';
+import { dataPath, ensureDir } from './paths';
 
-const settingsFile = path.join(process.cwd(), 'data', 'settings.json');
+const settingsFile = dataPath('settings.json');
 
 type Settings = Record<Room, { counterName: string }>;
 
@@ -28,6 +28,7 @@ function saveSettingsFromState(state: State) {
       exam: { counterName: state.exam.counterName },
       pharmacy: { counterName: state.pharmacy.counterName },
     };
+    ensureDir(dataPath());
     fs.writeFileSync(settingsFile, JSON.stringify(data, null, 2), 'utf8');
   } catch (e) {
     console.error('Failed to save settings:', e);

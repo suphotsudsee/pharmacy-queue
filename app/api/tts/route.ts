@@ -5,13 +5,14 @@ import * as path from 'path';
 import * as fs from 'fs';
 import crypto from 'crypto';
 import textToSpeech from '@google-cloud/text-to-speech';
+import { dataPath, ensureDir } from '@/lib/paths';
 
 // CREDENTIALS_DIAG
 const credPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
 
 type Body = { text?: string; voice?: { languageCode?: string; name?: string; ssmlGender?: string } };
 
-const cacheDir = path.join(process.cwd(), 'data', 'tts-cache');
+const cacheDir = dataPath('tts-cache');
 
 function makeId(text: string, voice: any) {
   const v = JSON.stringify(voice || {});
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest) {
     if (!response.audioContent) {
       return new Response(JSON.stringify({ ok: false, error: 'No audioContent' }), { status: 500 });
     }
-    if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir, { recursive: true });
+    ensureDir(cacheDir);
     fs.writeFileSync(mp3Path, Buffer.from(response.audioContent as Uint8Array));
 
     return new Response(JSON.stringify({ ok: true, id }), { headers: { 'content-type': 'application/json' } });
