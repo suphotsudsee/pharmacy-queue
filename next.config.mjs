@@ -2,6 +2,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   output: 'standalone',
   webpack: (config, { dev }) => {
     if (dev && config.cache && config.cache.type === 'filesystem') {
