@@ -1,6 +1,6 @@
 {
   "name": "pharmacy-queue-tts-local-v5",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
 "scripts": {
   "dev:web": "cross-env NEXT_DIST_DIR=.next-dev next dev -H 127.0.0.1 -p 3001",
