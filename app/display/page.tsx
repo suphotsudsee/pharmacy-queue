@@ -16,28 +16,39 @@ export default function DisplayPage() {
 
 function Board({ room }: { room: Room }) {
   const [snap, setSnap] = React.useState<Snapshot | null>(null);
-  const [lastNumber, setLastNumber] = React.useState<number | null>(null);
   const [chime, setChime] = React.useState(false);
+  const chimeRef = React.useRef(chime);
+  const lastNumberRef = React.useRef<number | null>(null);
+
+  React.useEffect(() => {
+    chimeRef.current = chime;
+  }, [chime]);
+
+  const applySnapshot = React.useCallback((data: Snapshot) => {
+    const nextCurrent = data.current ?? null;
+    if (chimeRef.current && nextCurrent && nextCurrent !== lastNumberRef.current) {
+      const audio = new Audio('/sounds/chime.mp3');
+      audio.play().catch(() => {});
+    }
+    lastNumberRef.current = nextCurrent;
+    setSnap(data);
+  }, []);
 
   const refresh = React.useCallback(async () => {
     const res = await fetch(`/api/queue?room=${room}`, { cache: 'no-store' });
     const data: Snapshot = await res.json();
-    const nextCurrent = data.current ?? null;
-    if (chime && nextCurrent && nextCurrent !== lastNumber) {
-      try {
-        const audio = new Audio('/sounds/chime.mp3');
-        await audio.play();
-      } catch (e) {}
-    }
-    setLastNumber(nextCurrent ?? null);
-    setSnap(data);
-  }, [room, chime, lastNumber]);
+    applySnapshot(data);
+  }, [room, applySnapshot]);
 
   React.useEffect(() => {
     refresh();
-    const t = setInterval(refresh, 1500);
-    return () => clearInterval(t);
-  }, [refresh]);
+    const events = new EventSource(`/api/queue/events?room=${room}`);
+    events.onmessage = (event) => {
+      const data: Snapshot = JSON.parse(event.data);
+      applySnapshot(data);
+    };
+    return () => events.close();
+  }, [room, refresh, applySnapshot]);
 
   const skipped = (snap?.items ?? [])
     .filter(i => i.status === 'skipped')
@@ -90,7 +101,7 @@ function Board({ room }: { room: Room }) {
     </div>
 
     <div style={{ position: 'absolute', bottom: 16, right: 28, opacity: 0.6, fontSize: 12 }}>
-      {room === 'exam' ? 'ห้องตรวจ' : 'ห้องยา'} · แสดงผลอัตโนมัติทุก 1.5 วินาที
+      {room === 'exam' ? 'ห้องตรวจ' : 'ห้องยา'} · อัปเดตอัตโนมัติเมื่อคิวเปลี่ยน
     </div>
   </section>
 </div>

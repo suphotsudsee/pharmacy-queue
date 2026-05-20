@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import { Room } from './types';
 import { dataPath, ensureDir } from './paths';
+import { notifyQueue } from './queue-events';
 
 const settingsFile = dataPath('settings.json');
 
@@ -96,6 +97,7 @@ export function addQueue(room: Room): QueueItem {
   const num = ++st.tailNumber;
   const item: QueueItem = { number: num, status: 'waiting', createdAt: Date.now() };
   st.items.push(item);
+  notifyQueue(room);
   return item;
 }
 
@@ -117,9 +119,14 @@ export function nextQueue(room: Room) {
     if (cur && cur.status === 'calling') cur.status = 'done';
   }
   const next = st.items.find(i => i.status === 'waiting');
-  if (!next) { st.current = null; return null; }
+  if (!next) {
+    st.current = null;
+    notifyQueue(room);
+    return null;
+  }
   next.status = 'calling';
   st.current = next.number;
+  notifyQueue(room);
   return next.number;
 }
 
@@ -137,6 +144,7 @@ export function callNumber(room: Room, num: number) {
   }
   item.status = 'calling';
   st.current = num;
+  notifyQueue(room);
   return st.current;
 }
 
@@ -148,6 +156,7 @@ export function skipCurrent(room: Room) {
   const next = st.items.find(i => i.status === 'waiting');
   st.current = next ? next.number : null;
   if (next) next.status = 'calling';
+  notifyQueue(room);
   return st.current;
 }
 
@@ -159,6 +168,7 @@ export function doneCurrent(room: Room) {
   const next = st.items.find(i => i.status === 'waiting');
   st.current = next ? next.number : null;
   if (next) next.status = 'calling';
+  notifyQueue(room);
   return st.current;
 }
 
@@ -167,14 +177,17 @@ export function resetQueue(room: Room) {
   st.current = null;
   st.items = [];
   st.tailNumber = 0;
+  notifyQueue(room);
 }
 
 export function setCounterName(room: Room, name: string) {
   state[room].counterName = name || defaultSettings[room].counterName;
   saveSettingsFromState(state);
+  notifyQueue(room);
 }
 
 export function setSystemTitle(room: Room, title: string) {
   state[room].systemTitle = title || defaultSettings[room].systemTitle;
   saveSettingsFromState(state);
+  notifyQueue(room);
 }

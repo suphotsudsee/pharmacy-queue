@@ -14,24 +14,43 @@ type Snapshot = {
 
 export default function Page() {
   const [showDonate, setShowDonate] = React.useState(false);
-  const [systemTitle, setSystemTitle] = React.useState('ระบบเรียกคิวห้องตรวจ');
+  const [systemTitles, setSystemTitles] = React.useState<Record<Room, string>>({
+    exam: 'ระบบเรียกคิวห้องตรวจ',
+    pharmacy: 'ระบบเรียกคิวห้องจ่ายยา',
+  });
   const [tails, setTails] = React.useState<Record<Room, string>>({
     exam: 'กรุณาติดต่อห้องตรวจ',
     pharmacy: 'กรุณาติดต่อรับยา',
   });
 
+  const setRoomTitle = React.useCallback((room: Room, title: string) => {
+    setSystemTitles((prev) => ({ ...prev, [room]: title }));
+  }, []);
+  const handleExamTitleLoaded = React.useCallback((title: string) => setRoomTitle('exam', title), [setRoomTitle]);
+  const handlePharmacyTitleLoaded = React.useCallback((title: string) => setRoomTitle('pharmacy', title), [setRoomTitle]);
+
   return (
     <main style={pageStyle}>
       <div style={contentStyle}>
-        <QueueControl
-          room="exam"
-          title={systemTitle}
-          tail={tails.exam}
-          onTitleLoaded={setSystemTitle}
-        />
+        <div style={roomGridStyle}>
+          <QueueControl
+            room="exam"
+            title={systemTitles.exam}
+            roomLabel="คิวห้องตรวจ"
+            tail={tails.exam}
+            onTitleLoaded={handleExamTitleLoaded}
+          />
+          <QueueControl
+            room="pharmacy"
+            title={systemTitles.pharmacy}
+            roomLabel="คิวห้องจ่ายยา"
+            tail={tails.pharmacy}
+            onTitleLoaded={handlePharmacyTitleLoaded}
+          />
+        </div>
         <AudioAnnouncer
-          systemTitle={systemTitle}
-          setSystemTitle={setSystemTitle}
+          systemTitles={systemTitles}
+          setSystemTitles={setSystemTitles}
           tails={tails}
           setTails={setTails}
         />
@@ -59,11 +78,13 @@ export default function Page() {
 function QueueControl({
   room,
   title,
+  roomLabel,
   tail,
   onTitleLoaded,
 }: {
   room: Room;
   title: string;
+  roomLabel: string;
   tail: string;
   onTitleLoaded: (title: string) => void;
 }) {
@@ -79,8 +100,13 @@ function QueueControl({
 
   React.useEffect(() => {
     refresh();
-    const t = setInterval(refresh, 2000);
-    return () => clearInterval(t);
+    const events = new EventSource(`/api/queue/events?room=${room}`);
+    events.onmessage = (event) => {
+      const data: Snapshot = JSON.parse(event.data);
+      setSnap(data);
+      if (data.systemTitle) onTitleLoaded(data.systemTitle);
+    };
+    return () => events.close();
   }, [refresh]);
 
   const action = async (url: string, after?: (n: number | null) => void | Promise<void>) => {
@@ -147,6 +173,7 @@ function QueueControl({
 
   return (
     <section style={shellStyle}>
+      <div style={roomLabelStyle}>{roomLabel}</div>
       <h1 style={titleStyle}>{title}</h1>
       <div style={controlGridStyle}>
         <div style={currentCardStyle}>
@@ -181,9 +208,9 @@ function QueueControl({
 
 function Panel({ title, items, highlight = false, onItemClick }: { title: string; items: number[]; highlight?: boolean; onItemClick?: (n: number) => void }) {
   return (
-    <div style={{ background: highlight ? '#0e1c4f' : '#0b1020', borderRadius: 12, padding: 12, minHeight: 72 }}>
-      <div style={{ fontWeight: 700, marginBottom: 8 }}>{title}</div>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+    <div style={highlight ? panelHighlightStyle : panelStyle}>
+      <div style={panelTitleStyle}>{title}</div>
+      <div style={panelItemsStyle}>
         {items.length === 0 ? <span style={{ opacity: 0.7 }}>-</span> :
           items.map(n => (
             <span
@@ -199,42 +226,111 @@ function Panel({ title, items, highlight = false, onItemClick }: { title: string
   );
 }
 
+const panelStyle: React.CSSProperties = {
+  background: '#0b1020',
+  borderRadius: 8,
+  padding: 8,
+  minHeight: 0,
+  overflow: 'hidden',
+  display: 'flex',
+  flexDirection: 'column',
+};
+
+const panelHighlightStyle: React.CSSProperties = {
+  ...panelStyle,
+  background: '#0e1c4f',
+};
+
+const panelTitleStyle: React.CSSProperties = {
+  fontWeight: 700,
+  marginBottom: 6,
+  fontSize: 14,
+  flexShrink: 0,
+};
+
+const panelItemsStyle: React.CSSProperties = {
+  display: 'flex',
+  gap: 6,
+  flexWrap: 'wrap',
+  alignContent: 'flex-start',
+  overflowY: 'auto',
+  minHeight: 0,
+  paddingRight: 4,
+};
+
 const pageStyle: React.CSSProperties = {
-  minHeight: '100vh',
+  height: '100vh',
   background: '#070c1c',
   color: '#eef3ff',
-  padding: '18px 24px 40px',
+  padding: '10px 14px 30px',
+  overflow: 'hidden',
+  boxSizing: 'border-box',
 };
 
 const contentStyle: React.CSSProperties = {
   width: '100%',
+  height: '100%',
   maxWidth: 'none',
   margin: '0 auto',
+  display: 'flex',
+  flexDirection: 'column',
+  minHeight: 0,
 };
 
 const shellStyle: React.CSSProperties = {
   width: '100%',
+  height: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  minHeight: 0,
+};
+
+const roomGridStyle: React.CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+  gap: 12,
+  alignItems: 'stretch',
+  flex: 1,
+  minHeight: 0,
+};
+
+const roomLabelStyle: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  background: '#14b8a6',
+  color: '#031018',
+  borderRadius: 6,
+  padding: '3px 8px',
+  fontSize: 13,
+  fontWeight: 900,
+  marginBottom: 4,
+  alignSelf: 'flex-start',
 };
 
 const titleStyle: React.CSSProperties = {
-  fontSize: 28,
+  fontSize: 20,
   fontWeight: 800,
-  margin: '0 0 10px',
+  margin: '0 0 6px',
   letterSpacing: 0,
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
 };
 
 const controlGridStyle: React.CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: 'minmax(280px, 1fr) minmax(320px, 1fr)',
-  gap: 16,
-  minHeight: 'calc(100vh - 238px)',
+  gridTemplateRows: 'minmax(250px, 1.35fr) minmax(170px, 0.65fr)',
+  gap: 10,
+  flex: 1,
+  minHeight: 0,
 };
 
 const cardStyle: React.CSSProperties = {
   background: '#121738',
-  borderRadius: 16,
-  padding: 16,
-  minHeight: 260,
+  borderRadius: 10,
+  padding: 10,
+  minHeight: 0,
+  overflow: 'hidden',
 };
 
 const currentCardStyle: React.CSSProperties = {
@@ -251,51 +347,55 @@ const queueCardStyle: React.CSSProperties = {
 
 const cardTitleStyle: React.CSSProperties = {
   margin: 0,
-  fontSize: 24,
+  fontSize: 18,
   fontWeight: 800,
 };
 
 const currentNumberStyle: React.CSSProperties = {
-  fontSize: 'clamp(240px, min(48vh, 28vw), 520px)',
+  fontSize: 'clamp(140px, min(34vh, 18vw), 300px)',
   fontWeight: 900,
   textAlign: 'center',
   lineHeight: '0.9',
   margin: 'auto 0',
-  minHeight: 'clamp(240px, min(48vh, 28vw), 520px)',
+  minHeight: 0,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
+  flex: 1,
 };
 
 const buttonWrapStyle: React.CSSProperties = {
   display: 'flex',
-  gap: 8,
+  gap: 6,
   flexWrap: 'wrap',
 };
 
 const panelGridStyle: React.CSSProperties = {
   display: 'grid',
   gridTemplateColumns: '1fr 1fr',
-  gap: 12,
-  marginTop: 12,
+  gap: 8,
+  marginTop: 8,
   flex: 1,
   gridTemplateRows: '1fr 1fr',
+  minHeight: 0,
 };
 
 const pill: React.CSSProperties = {
   background: '#1f2a4d',
-  padding: '6px 10px',
+  padding: '4px 8px',
   borderRadius: 999,
   fontWeight: 700,
+  fontSize: 14,
 };
 
 const baseButton: React.CSSProperties = {
   border: 'none',
   color: 'white',
-  padding: '10px 14px',
-  borderRadius: 10,
+  padding: '8px 10px',
+  borderRadius: 8,
   cursor: 'pointer',
   fontWeight: 700,
+  fontSize: 14,
 };
 
 const btnPri: React.CSSProperties = { ...baseButton, background: '#22c55e' };

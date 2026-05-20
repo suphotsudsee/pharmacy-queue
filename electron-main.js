@@ -84,7 +84,7 @@ app.whenReady().then(async () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       const url = isDev && process.env.NEXT_DEV_SERVER_URL
         ? process.env.NEXT_DEV_SERVER_URL
-        : `http://127.0.0.1:${process.env.PORT || 3000}`
+        : `http://127.0.0.1:${process.env.PORT || productionPort}`
       createWindow(url)
     }
   })
