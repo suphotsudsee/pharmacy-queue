@@ -2,9 +2,9 @@ const { app, BrowserWindow, shell, ipcMain } = require('electron')
 const fs = require('fs')
 const path = require('path')
 const http = require('http')
-const net = require('net')
 
 const isDev = !app.isPackaged
+const productionPort = 54000
 
 function createWindow(loadUrl) {
   const webPreferences = {
@@ -33,17 +33,6 @@ function createWindow(loadUrl) {
   if (isDev) win.webContents.openDevTools()
 }
 
-function getFreePort() {
-  return new Promise((resolve, reject) => {
-    const server = net.createServer()
-    server.once('error', reject)
-    server.listen(0, '0.0.0.0', () => {
-      const { port } = server.address()
-      server.close(() => resolve(port))
-    })
-  })
-}
-
 function waitForServer(port, timeoutMs = 30000) {
   const startedAt = Date.now()
 
@@ -68,7 +57,7 @@ function waitForServer(port, timeoutMs = 30000) {
 }
 
 async function startNextStandalone() {
-  const port = await getFreePort()
+  const port = productionPort
 
   process.env.PORT = String(port)
   process.env.HOSTNAME = '0.0.0.0'
