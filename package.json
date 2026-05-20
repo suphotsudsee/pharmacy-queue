@@ -1,20 +1,20 @@
 {
   "name": "pharmacy-queue-tts-local-v5",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "private": true,
-"scripts": {
-  "dev:web": "cross-env NEXT_DIST_DIR=.next-dev next dev -H 127.0.0.1 -p 3001",
-  "build": "next build && node scripts/prepare-standalone.js",
-  "build:web": "next build && node scripts/prepare-standalone.js",
-  "start:web": "next start -p 3000",
-  "dev": "npm-run-all -p dev:web dev:electron:wait",
-  "electron:dev": "npm run dev",
-  "dev:electron:wait": "wait-on tcp:3001 && cross-env NEXT_DEV_SERVER_URL=http://127.0.0.1:3001 electron .",
-  "start": "electron .",
-  "pack": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --dir",
-  "dist": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder",
-  "electron:build": "npm run dist"
-},
+  "scripts": {
+    "dev:web": "cross-env NEXT_DIST_DIR=.next-dev next dev -H 127.0.0.1 -p 3001",
+    "build": "next build && node scripts/prepare-standalone.js",
+    "build:web": "next build && node scripts/prepare-standalone.js",
+    "start:web": "next start -p 3000",
+    "dev": "npm-run-all -p dev:web dev:electron:wait",
+    "electron:dev": "npm run dev",
+    "dev:electron:wait": "wait-on tcp:3001 && cross-env NEXT_DEV_SERVER_URL=http://127.0.0.1:3001 electron .",
+    "start": "electron .",
+    "pack": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --dir",
+    "dist": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder",
+    "electron:build": "npm run dist"
+  },
   "dependencies": {
     "@google-cloud/text-to-speech": "^6.3.0",
     "cross-env": "^10.0.0",
@@ -35,38 +35,37 @@
     "typescript": "5.5.3"
   },
   "main": "electron-main.js",
-"build": {
-  "appId": "com.pharmacy.queue",
-  "productName": "Pharmacy Queue",
-  "files": [
-    ".next/**",
-    "public/**",
-    "electron/**",
-    "electron-main.js",
-    "next.config.*",
-    "package.json",
-    "tsconfig.json",
-    "app/**",
-    "components/**",
-    "lib/**"
-  ],
-  "directories": {
-    "buildResources": "public",
-    "output": "dist"
-  },
-  "asar": false,
-  "win": {
-    "target": "nsis",
-    "icon": "icon.ico",
-    "signAndEditExecutable": false
-  },
-  "nsis": {
-    "oneClick": false,
-    "perMachine": false,
-    "allowToChangeInstallationDirectory": true,
-    "createDesktopShortcut": true,
-    "createStartMenuShortcut": true
+  "build": {
+    "appId": "com.pharmacy.queue",
+    "productName": "Pharmacy Queue",
+    "files": [
+      ".next/**",
+      "public/**",
+      "electron/**",
+      "electron-main.js",
+      "next.config.*",
+      "package.json",
+      "tsconfig.json",
+      "app/**",
+      "components/**",
+      "lib/**"
+    ],
+    "directories": {
+      "buildResources": "public",
+      "output": "dist"
+    },
+    "asar": false,
+    "win": {
+      "target": "nsis",
+      "icon": "icon.ico",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   }
-}
-
 }
