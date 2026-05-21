@@ -4,19 +4,15 @@ import { NextRequest } from 'next/server';
 import * as path from 'path';
 import * as fs from 'fs';
 import crypto from 'crypto';
-import textToSpeech from '@google-cloud/text-to-speech';
 import { dataPath, ensureDir } from '@/lib/paths';
 
-// CREDENTIALS_DIAG
-const credPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-
-type Body = { text?: string; voice?: { languageCode?: string; name?: string; ssmlGender?: string } };
+type Body = { text?: string };
 
 const cacheDir = dataPath('tts-cache');
+const pending = ((global as any).__TTS_PENDING__ ??= new Map<string, Promise<string>>()) as Map<string, Promise<string>>;
 
-function makeId(text: string, voice: any) {
-  const v = JSON.stringify(voice || {});
-  return crypto.createHash('sha1').update(text + '|' + v).digest('hex');
+function makeId(text: string) {
+  return crypto.createHash('sha1').update(text).digest('hex');
 }
 
 export async function POST(req: NextRequest) {
@@ -26,38 +22,52 @@ export async function POST(req: NextRequest) {
     if (!text) {
       return new Response(JSON.stringify({ ok: false, error: 'text is required' }), { status: 400 });
     }
-    const voice = body.voice || { languageCode: 'th-TH', name: 'th-TH-Standard-A' };
-        if (!credPath) {
-          return new Response(JSON.stringify({ ok: false, error: 'Missing GOOGLE_APPLICATION_CREDENTIALS env var. Set it to your service-account JSON path.' }), { status: 500 });
-        }
-        try {
-          const fs = await import('fs');
-          if (!fs.existsSync(credPath)) {
-            return new Response(JSON.stringify({ ok: false, error: `Credentials file not found: ${credPath}` }), { status: 500 });
-          }
-        } catch {}
-        
-    const id = makeId(text, voice);
+
+    const id = makeId(text);
     const mp3Path = path.join(cacheDir, id + '.mp3');
     if (fs.existsSync(mp3Path)) {
       return new Response(JSON.stringify({ ok: true, id }), { headers: { 'content-type': 'application/json' } });
     }
 
-    const client = new textToSpeech.TextToSpeechClient();
-    const [response] = await client.synthesizeSpeech({
-      input: { text },
-      voice: { languageCode: voice.languageCode || 'th-TH', name: voice.name, ssmlGender: voice.ssmlGender as any },
-      audioConfig: { audioEncoding: 'MP3', speakingRate: 1.0, pitch: 0.0 },
-    });
-
-    if (!response.audioContent) {
-      return new Response(JSON.stringify({ ok: false, error: 'No audioContent' }), { status: 500 });
+    if (pending.has(id)) {
+      await pending.get(id);
+      return new Response(JSON.stringify({ ok: true, id }), { headers: { 'content-type': 'application/json' } });
     }
-    ensureDir(cacheDir);
-    fs.writeFileSync(mp3Path, Buffer.from(response.audioContent as Uint8Array));
 
+    const work = fetchAndCache(text, id, mp3Path);
+    pending.set(id, work);
+    await work;
     return new Response(JSON.stringify({ ok: true, id }), { headers: { 'content-type': 'application/json' } });
   } catch (e: any) {
     return new Response(JSON.stringify({ ok: false, error: String(e?.message || e) }), { status: 500 });
+  }
+}
+
+async function fetchAndCache(text: string, id: string, mp3Path: string) {
+  try {
+    const url = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&q=${encodeURIComponent(text)}&tl=th`;
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0',
+        Accept: '*/*',
+        Referer: 'https://translate.google.com/',
+      },
+    });
+    if (!res.ok) {
+      throw new Error(`Google Translate TTS failed: ${res.status}`);
+    }
+
+    const buf = Buffer.from(await res.arrayBuffer());
+    if (buf.length < 1000) {
+      throw new Error('Google Translate TTS returned an empty audio file');
+    }
+
+    ensureDir(cacheDir);
+    const tmpPath = `${mp3Path}.${process.pid}.${Date.now()}.tmp`;
+    fs.writeFileSync(tmpPath, buf);
+    fs.renameSync(tmpPath, mp3Path);
+    return id;
+  } finally {
+    pending.delete(id);
   }
 }

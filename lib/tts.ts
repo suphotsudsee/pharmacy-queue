@@ -46,20 +46,43 @@ function readThaiNumber(number: number): string {
   return `${readThaiNumber(millionPart)}ล้าน${rest ? readThaiNumberUnderMillion(rest) : ''}`;
 }
 
-export async function speakCall(number: number, tail = 'กรุณาติดต่อรับยา') {
+type SoundMode = 'both' | 'notebook-only' | 'tv-only';
+
+const soundMode: SoundMode = 'both';
+
+export async function speakCall(number: number, tail = 'กรุณาติดต่อรับยา', room = 'pharmacy') {
   if (typeof window === 'undefined') return;
   const text = `ขอเชิญหมายเลข ${readThaiNumber(number)} ${tail}`;
-  const res = await fetch('/api/gt-tts', {
+  const res = await fetch('/api/tts', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text })
   });
   const data = await res.json();
   if (!res.ok || !data?.id) {
-    console.error('GT TTS failed:', data);
-    alert(data?.error || 'ไม่สามารถดึงเสียงจาก Google Translate ได้');
+    console.error('TTS failed:', data);
+    alert(data?.error || 'ไม่สามารถสร้างเสียงประกาศได้');
     return;
   }
-  const audio = new Audio(`/api/gt-tts/file/${data.id}`);
-  await audio.play().catch(()=>{});
+
+  if (soundMode === 'both' || soundMode === 'notebook-only') {
+    const audio = new Audio(`/api/tts/audio?id=${data.id}`);
+    await audio.play().catch(()=>{});
+  }
+
+  if (soundMode === 'both' || soundMode === 'tv-only') {
+    await fetch(`/api/queue/current?room=${room}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        room,
+        queueNumber: number,
+        text,
+        ttsId: data.id,
+        calledAt: Date.now(),
+      }),
+    }).catch((error) => {
+      console.error('Queue current update failed:', error);
+    });
+  }
 }

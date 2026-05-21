@@ -61,8 +61,15 @@ function saveSettingsFromState(state: State) {
 }
 
 export type QueueItem = { number: number; status: 'waiting'|'calling'|'done'|'skipped'; createdAt: number };
+export type CurrentQueueCall = {
+  queueNumber: number | string;
+  text: string;
+  ttsId: string;
+  calledAt: number;
+};
 type RoomState = {
   current: number | null;
+  currentCall: CurrentQueueCall | null;
   items: QueueItem[];
   tailNumber: number;
   counterName: string;
@@ -76,6 +83,7 @@ if (!g.__MULTI_QUEUE_STATE__) {
   g.__MULTI_QUEUE_STATE__ = {
     exam: {
       current: null,
+      currentCall: null,
       items: [],
       tailNumber: 0,
       counterName: s.exam.counterName,
@@ -83,6 +91,7 @@ if (!g.__MULTI_QUEUE_STATE__) {
     },
     pharmacy: {
       current: null,
+      currentCall: null,
       items: [],
       tailNumber: 0,
       counterName: s.pharmacy.counterName,
@@ -91,6 +100,10 @@ if (!g.__MULTI_QUEUE_STATE__) {
   } as State;
 }
 export const state: State = g.__MULTI_QUEUE_STATE__;
+
+for (const room of ['exam', 'pharmacy'] as Room[]) {
+  state[room].currentCall ??= null;
+}
 
 export function addQueue(room: Room): QueueItem {
   const st = state[room];
@@ -110,6 +123,16 @@ export function getSnapshot(room: Room) {
     counterName: st.counterName,
     systemTitle: st.systemTitle,
   };
+}
+
+export function getCurrentQueueCall(room: Room) {
+  return state[room].currentCall;
+}
+
+export function setCurrentQueueCall(room: Room, call: CurrentQueueCall) {
+  state[room].currentCall = call;
+  notifyQueue(room);
+  return call;
 }
 
 export function nextQueue(room: Room) {

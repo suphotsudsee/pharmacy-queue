@@ -121,11 +121,11 @@ function QueueControl({
     }
   };
 
-  const callNext = async () => action(`/api/queue/next?room=${room}`, async (n) => { if (n) await speakCall(n, tail); });
-  const callRepeat = async () => action(`/api/queue/repeat?room=${room}`, async (n) => { if (n) await speakCall(n, tail); });
+  const callNext = async () => action(`/api/queue/next?room=${room}`, async (n) => { if (n) await speakCall(n, tail, room); });
+  const callRepeat = async () => action(`/api/queue/repeat?room=${room}`, async (n) => { if (n) await speakCall(n, tail, room); });
   const callSkip = async () => action(`/api/queue/skip?room=${room}`);
   const callDone = async () => action(`/api/queue/done?room=${room}`);
-  const callNumber = async (n: number) => action(`/api/queue/call?room=${room}&number=${n}`, async (m) => { if (m) await speakCall(m, tail); });
+  const callNumber = async (n: number) => action(`/api/queue/call?room=${room}&number=${n}`, async (m) => { if (m) await speakCall(m, tail, room); });
 
   const add = async () => {
     setLoading(true);
