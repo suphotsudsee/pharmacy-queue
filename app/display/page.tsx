@@ -1,22 +1,11 @@
 'use client';
 import React from 'react';
 import type { Room } from '@/lib/types';
+import { playAudioParts } from '@/lib/tts';
 
 type Snapshot = { current: number|null; items: { number: number; status: string; createdAt: number }[]; tailNumber: number; counterName: string };
 type AudioPart = { id: string; rate: number };
 type CurrentQueue = { queueNumber: number | string; text: string; ttsId: string; audioParts?: AudioPart[]; calledAt: number } | null;
-
-async function playAudioParts(parts: AudioPart[]) {
-  for (const part of parts) {
-    const audio = new Audio(`/api/tts/audio?id=${part.id}`);
-    audio.playbackRate = part.rate;
-    await new Promise<void>((resolve) => {
-      audio.onended = () => resolve();
-      audio.onerror = () => resolve();
-      audio.play().catch(() => resolve());
-    });
-  }
-}
 
 export default function DisplayPage() {
   return (
