@@ -65,6 +65,7 @@ export type CurrentQueueCall = {
   queueNumber: number | string;
   text: string;
   ttsId: string;
+  audioParts?: { id: string; rate: number }[];
   calledAt: number;
 };
 type RoomState = {

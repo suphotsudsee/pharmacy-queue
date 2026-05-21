@@ -3,7 +3,20 @@ import React from 'react';
 import type { Room } from '@/lib/types';
 
 type Snapshot = { current: number|null; items: { number: number; status: string; createdAt: number }[]; tailNumber: number; counterName: string };
-type CurrentQueue = { queueNumber: number | string; text: string; ttsId: string; calledAt: number } | null;
+type AudioPart = { id: string; rate: number };
+type CurrentQueue = { queueNumber: number | string; text: string; ttsId: string; audioParts?: AudioPart[]; calledAt: number } | null;
+
+async function playAudioParts(parts: AudioPart[]) {
+  for (const part of parts) {
+    const audio = new Audio(`/api/tts/audio?id=${part.id}`);
+    audio.playbackRate = part.rate;
+    await new Promise<void>((resolve) => {
+      audio.onended = () => resolve();
+      audio.onerror = () => resolve();
+      audio.play().catch(() => resolve());
+    });
+  }
+}
 
 export default function DisplayPage() {
   return (
@@ -55,8 +68,7 @@ function Board({ room }: { room: Room }) {
     if (!previousCalledAt || previousCalledAt === data.calledAt) return;
 
     if (audioEnabledRef.current && data.ttsId) {
-      const audio = new Audio(`/api/tts/audio?id=${data.ttsId}`);
-      await audio.play().catch(() => {});
+      await playAudioParts(data.audioParts?.length ? data.audioParts : [{ id: data.ttsId, rate: 1 }]);
     }
   }, [room]);
 

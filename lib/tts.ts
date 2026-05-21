@@ -1,5 +1,8 @@
 const thaiDigits = ['', 'หนึ่ง', 'สอง', 'สาม', 'สี่', 'ห้า', 'หก', 'เจ็ด', 'แปด', 'เก้า'];
 const thaiPlaces = ['', 'สิบ', 'ร้อย', 'พัน', 'หมื่น', 'แสน'];
+const normalSpeechRate = 1;
+const numberSpeechRate = 0.75;
+type AudioPart = { id: string; rate: number };
 
 function readThaiNumberUnderMillion(number: number): string {
   if (number === 0) return 'ศูนย์';
@@ -50,9 +53,7 @@ type SoundMode = 'both' | 'notebook-only' | 'tv-only';
 
 const soundMode: SoundMode = 'both';
 
-export async function speakCall(number: number, tail = 'กรุณาติดต่อรับยา', room = 'pharmacy') {
-  if (typeof window === 'undefined') return;
-  const text = `ขอเชิญหมายเลข ${readThaiNumber(number)} ${tail}`;
+async function createTts(text: string) {
   const res = await fetch('/api/tts', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -62,12 +63,42 @@ export async function speakCall(number: number, tail = 'กรุณาติด
   if (!res.ok || !data?.id) {
     console.error('TTS failed:', data);
     alert(data?.error || 'ไม่สามารถสร้างเสียงประกาศได้');
-    return;
+    return null;
+  }
+  return data.id as string;
+}
+
+async function playAudioParts(parts: AudioPart[]) {
+  for (const part of parts) {
+    const audio = new Audio(`/api/tts/audio?id=${part.id}`);
+    audio.playbackRate = part.rate;
+    await new Promise<void>((resolve) => {
+      audio.onended = () => resolve();
+      audio.onerror = () => resolve();
+      audio.play().catch(() => resolve());
+    });
+  }
+}
+
+export async function speakCall(number: number, tail = 'กรุณาติดต่อรับยา', room = 'pharmacy') {
+  if (typeof window === 'undefined') return;
+  const numberText = readThaiNumber(number);
+  const text = `ขอเชิญหมายเลข ${numberText}, ${tail}`;
+  const speechParts = [
+    { text: 'ขอเชิญหมายเลข', rate: normalSpeechRate },
+    { text: numberText, rate: numberSpeechRate },
+    { text: tail, rate: normalSpeechRate },
+  ].filter((part) => part.text.trim());
+  const audioParts: AudioPart[] = [];
+
+  for (const part of speechParts) {
+    const id = await createTts(part.text);
+    if (!id) return;
+    audioParts.push({ id, rate: part.rate });
   }
 
   if (soundMode === 'both' || soundMode === 'notebook-only') {
-    const audio = new Audio(`/api/tts/audio?id=${data.id}`);
-    await audio.play().catch(()=>{});
+    await playAudioParts(audioParts);
   }
 
   if (soundMode === 'both' || soundMode === 'tv-only') {
@@ -78,7 +109,8 @@ export async function speakCall(number: number, tail = 'กรุณาติด
         room,
         queueNumber: number,
         text,
-        ttsId: data.id,
+        ttsId: audioParts[0]?.id,
+        audioParts,
         calledAt: Date.now(),
       }),
     }).catch((error) => {
