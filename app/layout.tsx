@@ -1,3 +1,5 @@
+import './globals.css';
+
 export const metadata = {
   title: 'Pharmacy Queue (Thai TTS)',
   description: 'Pharmacy queue caller with Thai TTS',

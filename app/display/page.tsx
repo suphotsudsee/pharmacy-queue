@@ -8,8 +8,43 @@ type AudioPart = { id: string; rate: number };
 type CurrentQueue = { queueNumber: number | string; text: string; ttsId: string; audioParts?: AudioPart[]; calledAt: number } | null;
 
 export default function DisplayPage() {
+  React.useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const previous = {
+      htmlWidth: html.style.width,
+      htmlHeight: html.style.height,
+      htmlOverflow: html.style.overflow,
+      bodyMargin: body.style.margin,
+      bodyPadding: body.style.padding,
+      bodyWidth: body.style.width,
+      bodyHeight: body.style.height,
+      bodyOverflow: body.style.overflow,
+    };
+
+    html.style.width = '100vw';
+    html.style.height = '100vh';
+    html.style.overflow = 'hidden';
+    body.style.margin = '0';
+    body.style.padding = '0';
+    body.style.width = '100vw';
+    body.style.height = '100vh';
+    body.style.overflow = 'hidden';
+
+    return () => {
+      html.style.width = previous.htmlWidth;
+      html.style.height = previous.htmlHeight;
+      html.style.overflow = previous.htmlOverflow;
+      body.style.margin = previous.bodyMargin;
+      body.style.padding = previous.bodyPadding;
+      body.style.width = previous.bodyWidth;
+      body.style.height = previous.bodyHeight;
+      body.style.overflow = previous.bodyOverflow;
+    };
+  }, []);
+
   return (
-    <main style={{ width: '100%', height: '100vh', background: '#030712', color: '#e5e7eb', display: 'grid', gridTemplateColumns: '1fr 1fr', position: 'relative' }}>
+    <main className="display-page" style={{ background: '#030712', color: '#e5e7eb', position: 'relative' }}>
       <div style={{ position: 'absolute', top: 0, bottom: 0, left: '50%', width: 4, background: 'white', transform: 'translateX(50%)' }} />
       <Board room="exam" />
       <Board room="pharmacy" />
