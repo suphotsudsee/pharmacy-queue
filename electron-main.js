@@ -4,7 +4,7 @@ const path = require('path')
 const http = require('http')
 
 const isDev = !app.isPackaged
-const productionPort = 54000
+const productionPort = 5123
 
 function createWindow(loadUrl) {
   const webPreferences = {

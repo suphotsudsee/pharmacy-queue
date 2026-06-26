@@ -9,6 +9,7 @@ type RoomSettings = {
   counterName: string;
   systemTitle: string;
   queueStartNumber: number;
+  kioskTitle: string;
 };
 type Settings = Record<Room, RoomSettings>;
 
@@ -17,11 +18,13 @@ const defaultSettings: Settings = {
     counterName: 'ห้องตรวจ 1',
     systemTitle: 'ระบบเรียกคิวห้องตรวจ',
     queueStartNumber: 1,
+    kioskTitle: 'กดรับบัตรคิว',
   },
   pharmacy: {
     counterName: 'ช่องยา 1',
     systemTitle: 'ระบบเรียกคิวห้องยา',
     queueStartNumber: 1,
+    kioskTitle: 'กดรับบัตรคิว',
   },
 };
 
@@ -40,11 +43,13 @@ function loadSettings(): Settings {
         counterName: data?.exam?.counterName ?? defaultSettings.exam.counterName,
         systemTitle: data?.exam?.systemTitle ?? defaultSettings.exam.systemTitle,
         queueStartNumber: normalizeQueueStartNumber(data?.exam?.queueStartNumber, defaultSettings.exam.queueStartNumber),
+        kioskTitle: data?.exam?.kioskTitle ?? defaultSettings.exam.kioskTitle,
       },
       pharmacy: {
         counterName: data?.pharmacy?.counterName ?? defaultSettings.pharmacy.counterName,
         systemTitle: data?.pharmacy?.systemTitle ?? defaultSettings.pharmacy.systemTitle,
         queueStartNumber: normalizeQueueStartNumber(data?.pharmacy?.queueStartNumber, defaultSettings.pharmacy.queueStartNumber),
+        kioskTitle: data?.pharmacy?.kioskTitle ?? defaultSettings.pharmacy.kioskTitle,
       },
     };
   } catch {
@@ -59,11 +64,13 @@ function saveSettingsFromState(state: State) {
         counterName: state.exam.counterName,
         systemTitle: state.exam.systemTitle,
         queueStartNumber: state.exam.queueStartNumber,
+        kioskTitle: state.exam.kioskTitle,
       },
       pharmacy: {
         counterName: state.pharmacy.counterName,
         systemTitle: state.pharmacy.systemTitle,
         queueStartNumber: state.pharmacy.queueStartNumber,
+        kioskTitle: state.pharmacy.kioskTitle,
       },
     };
     ensureDir(dataPath());
@@ -89,6 +96,7 @@ type RoomState = {
   counterName: string;
   systemTitle: string;
   queueStartNumber: number;
+  kioskTitle: string;
 };
 type State = Record<Room, RoomState>;
 
@@ -104,6 +112,7 @@ if (!g.__MULTI_QUEUE_STATE__) {
       counterName: s.exam.counterName,
       systemTitle: s.exam.systemTitle,
       queueStartNumber: s.exam.queueStartNumber,
+      kioskTitle: s.exam.kioskTitle,
     },
     pharmacy: {
       current: null,
@@ -113,6 +122,7 @@ if (!g.__MULTI_QUEUE_STATE__) {
       counterName: s.pharmacy.counterName,
       systemTitle: s.pharmacy.systemTitle,
       queueStartNumber: s.pharmacy.queueStartNumber,
+      kioskTitle: s.pharmacy.kioskTitle,
     },
   } as State;
 }
@@ -121,6 +131,7 @@ export const state: State = g.__MULTI_QUEUE_STATE__;
 for (const room of ['exam', 'pharmacy'] as Room[]) {
   state[room].currentCall ??= null;
   state[room].queueStartNumber ??= defaultSettings[room].queueStartNumber;
+  state[room].kioskTitle ??= defaultSettings[room].kioskTitle;
 }
 
 export function addQueue(room: Room, startNumber?: number): QueueItem {
@@ -146,6 +157,7 @@ export function getSnapshot(room: Room) {
     counterName: st.counterName,
     systemTitle: st.systemTitle,
     queueStartNumber: st.queueStartNumber,
+    kioskTitle: st.kioskTitle,
   };
 }
 
@@ -244,6 +256,12 @@ export function setQueueStartNumber(room: Room, value: number) {
   if (st.current === null && st.items.length === 0) {
     st.tailNumber = st.queueStartNumber - 1;
   }
+  saveSettingsFromState(state);
+  notifyQueue(room);
+}
+
+export function setKioskTitle(room: Room, title: string) {
+  state[room].kioskTitle = title || defaultSettings[room].kioskTitle;
   saveSettingsFromState(state);
   notifyQueue(room);
 }

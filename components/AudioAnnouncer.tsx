@@ -15,6 +15,7 @@ type Props = {
 export default function AudioAnnouncer({ systemTitles, tails, queueStartNumbers, setSystemTitles, setTails, setQueueStartNumbers }: Props) {
   const [enabled, setEnabled] = React.useState(false);
   const [testNum, setTestNum] = React.useState(1);
+  const [kioskTitle, setKioskTitle] = React.useState('กดรับบัตรคิว');
 
   React.useEffect(() => {
     let cancelled = false;
@@ -23,13 +24,22 @@ export default function AudioAnnouncer({ systemTitles, tails, queueStartNumbers,
       const loaded = await Promise.all(rooms.map(async (room) => {
         const res = await fetch(`/api/settings/counter?room=${room}`, { cache: 'no-store' });
         const data = await res.json();
-        return [room, Math.max(1, Number(data.queueStartNumber) || 1)] as const;
+        const queueStartNumber = Number(data.queueStartNumber);
+        return [room, Number.isFinite(queueStartNumber) ? Math.max(1, Math.floor(queueStartNumber)) : 1] as const;
       }));
       if (!cancelled) {
         setQueueStartNumbers((current) => ({ ...current, ...Object.fromEntries(loaded) }));
       }
     };
+    const loadKioskTitle = async () => {
+      const res = await fetch('/api/settings/counter?room=pharmacy', { cache: 'no-store' });
+      const data = await res.json();
+      if (!cancelled && typeof data.kioskTitle === 'string') {
+        setKioskTitle(data.kioskTitle);
+      }
+    };
     loadQueueStartNumbers().catch(() => {});
+    loadKioskTitle().catch(() => {});
     return () => {
       cancelled = true;
     };
@@ -54,8 +64,19 @@ export default function AudioAnnouncer({ systemTitles, tails, queueStartNumbers,
     });
   };
 
+  const updateKioskTitle = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setKioskTitle(val);
+    await fetch('/api/settings/counter?room=pharmacy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kioskTitle: val }),
+    });
+  };
+
   const updateQueueStartNumber = (room: Room) => async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = Math.max(1, parseInt(e.target.value || '1', 10) || 1);
+    const parsed = parseInt(e.target.value || '1', 10);
+    const val = Number.isFinite(parsed) ? Math.max(1, parsed) : 1;
     setQueueStartNumbers((numbers) => ({ ...numbers, [room]: val }));
     await fetch(`/api/settings/counter?room=${room}`, {
       method: 'POST',
@@ -71,6 +92,10 @@ export default function AudioAnnouncer({ systemTitles, tails, queueStartNumbers,
         <label style={labelStyle}>
           ทดสอบหมายเลข:
           <input type="number" value={testNum} onChange={e => setTestNum(parseInt(e.target.value || '0'))} style={{ ...inputStyle, width: 92 }} />
+        </label>
+        <label style={labelStyle}>
+          ชื่อหน้า Kiosk:
+          <input value={kioskTitle} onChange={updateKioskTitle} style={{ ...inputStyle, minWidth: 240 }} placeholder="กดรับบัตรคิว" />
         </label>
         <label style={labelStyle}>
           หางเสียงห้องตรวจ:

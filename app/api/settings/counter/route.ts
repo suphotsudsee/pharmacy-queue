@@ -1,7 +1,7 @@
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getSnapshot, setCounterName, setQueueStartNumber, setSystemTitle } from '@/lib/store';
+import { getSnapshot, setCounterName, setKioskTitle, setQueueStartNumber, setSystemTitle } from '@/lib/store';
 import { Room } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -13,8 +13,8 @@ function getRoom(req: NextRequest): Room {
 
 export async function GET(req: NextRequest) {
   const room = getRoom(req);
-  const { counterName, systemTitle, queueStartNumber } = getSnapshot(room);
-  return NextResponse.json({ counterName, systemTitle, queueStartNumber });
+  const { counterName, systemTitle, queueStartNumber, kioskTitle } = getSnapshot(room);
+  return NextResponse.json({ counterName, systemTitle, queueStartNumber, kioskTitle });
 }
 
 export async function POST(req: NextRequest) {
@@ -29,6 +29,10 @@ export async function POST(req: NextRequest) {
     setSystemTitle(room, body.systemTitle.trim());
     updated = true;
   }
+  if (typeof body.kioskTitle === 'string') {
+    setKioskTitle(room, body.kioskTitle.trim());
+    updated = true;
+  }
   if (body.queueStartNumber !== undefined) {
     const queueStartNumber = Number(body.queueStartNumber);
     if (!Number.isFinite(queueStartNumber) || queueStartNumber < 1) {
@@ -38,8 +42,8 @@ export async function POST(req: NextRequest) {
     updated = true;
   }
   if (updated) {
-    const { counterName, systemTitle, queueStartNumber } = getSnapshot(room);
-    return NextResponse.json({ ok: true, counterName, systemTitle, queueStartNumber });
+    const { counterName, systemTitle, queueStartNumber, kioskTitle } = getSnapshot(room);
+    return NextResponse.json({ ok: true, counterName, systemTitle, queueStartNumber, kioskTitle });
   }
-  return NextResponse.json({ ok: false, error: 'counterName, systemTitle, or queueStartNumber is required' }, { status: 400 });
+  return NextResponse.json({ ok: false, error: 'counterName, systemTitle, kioskTitle, or queueStartNumber is required' }, { status: 400 });
 }

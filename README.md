@@ -10,7 +10,7 @@
 ```bash
 npm install
 npm run dev
-# เปิด http://localhost:54000
+# เปิด http://localhost:5123
 ```
 > สำหรับ production: `npm run build && npm start`
 

@@ -1,4 +1,12 @@
 {
-  "exam": { "counterName": "ห้องตรวจ 1" },
-  "pharmacy": { "counterName": "ช่องยา 1" }
+  "exam": {
+    "counterName": "เธซเนเธญเธเธ•เธฃเธงเธ 1",
+    "queueStartNumber": 1,
+    "kioskTitle": "กดรับบัตรคิว"
+  },
+  "pharmacy": {
+    "counterName": "เธเนเธญเธเธขเธฒ 1",
+    "queueStartNumber": 1,
+    "kioskTitle": "กดรับบัตรคิว"
+  }
 }

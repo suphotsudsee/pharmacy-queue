@@ -116,7 +116,7 @@ function QueueControl({
     const data: Snapshot = await res.json();
     setSnap(data);
     if (data.systemTitle) onTitleLoaded(data.systemTitle);
-    if (data.queueStartNumber) onQueueStartNumberLoaded(data.queueStartNumber);
+    if (data.queueStartNumber !== undefined) onQueueStartNumberLoaded(data.queueStartNumber);
   }, [room, onTitleLoaded, onQueueStartNumberLoaded]);
 
   React.useEffect(() => {
@@ -126,7 +126,7 @@ function QueueControl({
       const data: Snapshot = JSON.parse(event.data);
       setSnap(data);
       if (data.systemTitle) onTitleLoaded(data.systemTitle);
-      if (data.queueStartNumber) onQueueStartNumberLoaded(data.queueStartNumber);
+      if (data.queueStartNumber !== undefined) onQueueStartNumberLoaded(data.queueStartNumber);
     };
     return () => events.close();
   }, [refresh]);
@@ -143,11 +143,11 @@ function QueueControl({
     }
   };
 
-  const callNext = async () => action(`/api/queue/next?room=${room}`, async (n) => { if (n) await speakCall(n, tail, room); });
-  const callRepeat = async () => action(`/api/queue/repeat?room=${room}`, async (n) => { if (n) await speakCall(n, tail, room); });
+  const callNext = async () => action(`/api/queue/next?room=${room}`, async (n) => { if (n !== null) await speakCall(n, tail, room); });
+  const callRepeat = async () => action(`/api/queue/repeat?room=${room}`, async (n) => { if (n !== null) await speakCall(n, tail, room); });
   const callSkip = async () => action(`/api/queue/skip?room=${room}`);
   const callDone = async () => action(`/api/queue/done?room=${room}`);
-  const callNumber = async (n: number) => action(`/api/queue/call?room=${room}&number=${n}`, async (m) => { if (m) await speakCall(m, tail, room); });
+  const callNumber = async (n: number) => action(`/api/queue/call?room=${room}&number=${n}`, async (m) => { if (m !== null) await speakCall(m, tail, room); });
 
   const add = async () => {
     setLoading(true);
@@ -205,9 +205,9 @@ function QueueControl({
           </div>
           <div style={buttonWrapStyle}>
             <button onClick={callNext} disabled={loading} style={btnPri}>เรียกถัดไป</button>
-            <button onClick={callRepeat} disabled={loading || !current} style={btnSec}>เรียกซ้ำ</button>
-            <button onClick={callSkip} disabled={loading || !current} style={btnWarn}>ข้าม</button>
-            <button onClick={callDone} disabled={loading || !current} style={btnOk}>เสร็จสิ้น</button>
+            <button onClick={callRepeat} disabled={loading || current === null} style={btnSec}>เรียกซ้ำ</button>
+            <button onClick={callSkip} disabled={loading || current === null} style={btnWarn}>ข้าม</button>
+            <button onClick={callDone} disabled={loading || current === null} style={btnOk}>เสร็จสิ้น</button>
           </div>
         </div>
         <div style={queueCardStyle}>
@@ -341,7 +341,7 @@ const titleStyle: React.CSSProperties = {
 
 const controlGridStyle: React.CSSProperties = {
   display: 'grid',
-  gridTemplateRows: 'minmax(250px, 1.35fr) minmax(170px, 0.65fr)',
+  gridTemplateRows: 'minmax(0, 1fr) minmax(0, 1fr)',
   gap: 10,
   flex: 1,
   minHeight: 0,
@@ -374,7 +374,7 @@ const cardTitleStyle: React.CSSProperties = {
 };
 
 const currentNumberStyle: React.CSSProperties = {
-  fontSize: 'clamp(140px, min(34vh, 18vw), 300px)',
+  fontSize: 'clamp(70px, min(17vh, 9vw), 150px)',
   fontWeight: 900,
   textAlign: 'center',
   lineHeight: '0.9',
