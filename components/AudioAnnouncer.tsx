@@ -6,13 +6,34 @@ import type { Room } from '@/lib/types';
 type Props = {
   systemTitles: Record<Room, string>;
   tails: Record<Room, string>;
+  queueStartNumbers: Record<Room, number>;
   setSystemTitles: React.Dispatch<React.SetStateAction<Record<Room, string>>>;
   setTails: React.Dispatch<React.SetStateAction<Record<Room, string>>>;
+  setQueueStartNumbers: React.Dispatch<React.SetStateAction<Record<Room, number>>>;
 };
 
-export default function AudioAnnouncer({ systemTitles, tails, setSystemTitles, setTails }: Props) {
+export default function AudioAnnouncer({ systemTitles, tails, queueStartNumbers, setSystemTitles, setTails, setQueueStartNumbers }: Props) {
   const [enabled, setEnabled] = React.useState(false);
   const [testNum, setTestNum] = React.useState(1);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    const loadQueueStartNumbers = async () => {
+      const rooms: Room[] = ['exam', 'pharmacy'];
+      const loaded = await Promise.all(rooms.map(async (room) => {
+        const res = await fetch(`/api/settings/counter?room=${room}`, { cache: 'no-store' });
+        const data = await res.json();
+        return [room, Math.max(1, Number(data.queueStartNumber) || 1)] as const;
+      }));
+      if (!cancelled) {
+        setQueueStartNumbers((current) => ({ ...current, ...Object.fromEntries(loaded) }));
+      }
+    };
+    loadQueueStartNumbers().catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const enableAudio = async () => {
     try { setEnabled(true); } catch {}
@@ -30,6 +51,16 @@ export default function AudioAnnouncer({ systemTitles, tails, setSystemTitles, s
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ systemTitle: val }),
+    });
+  };
+
+  const updateQueueStartNumber = (room: Room) => async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = Math.max(1, parseInt(e.target.value || '1', 10) || 1);
+    setQueueStartNumbers((numbers) => ({ ...numbers, [room]: val }));
+    await fetch(`/api/settings/counter?room=${room}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ queueStartNumber: val }),
     });
   };
 
@@ -54,8 +85,16 @@ export default function AudioAnnouncer({ systemTitles, tails, setSystemTitles, s
           <input value={systemTitles.exam} onChange={updateSystemTitle('exam')} style={{ ...inputStyle, minWidth: 240 }} placeholder="ระบบเรียกคิวห้องตรวจ" />
         </label>
         <label style={labelStyle}>
+          เริ่มคิวห้องตรวจ:
+          <input type="number" min={1} value={queueStartNumbers.exam} onChange={updateQueueStartNumber('exam')} style={{ ...inputStyle, width: 92 }} />
+        </label>
+        <label style={labelStyle}>
           ชื่อระบบห้องจ่ายยา:
           <input value={systemTitles.pharmacy} onChange={updateSystemTitle('pharmacy')} style={{ ...inputStyle, minWidth: 240 }} placeholder="ระบบเรียกคิวห้องจ่ายยา" />
+        </label>
+        <label style={labelStyle}>
+          เริ่มคิวห้องจ่ายยา:
+          <input type="number" min={1} value={queueStartNumbers.pharmacy} onChange={updateQueueStartNumber('pharmacy')} style={{ ...inputStyle, width: 92 }} />
         </label>
         <button onClick={() => enabled && speakCall(testNum, tails.exam)} style={btnStyle}>ทดสอบห้องตรวจ</button>
         <button onClick={() => enabled && speakCall(testNum, tails.pharmacy)} style={btnStyle}>ทดสอบห้องจ่ายยา</button>

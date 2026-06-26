@@ -8,6 +8,7 @@ const settingsFile = dataPath('settings.json');
 type RoomSettings = {
   counterName: string;
   systemTitle: string;
+  queueStartNumber: number;
 };
 type Settings = Record<Room, RoomSettings>;
 
@@ -15,12 +16,20 @@ const defaultSettings: Settings = {
   exam: {
     counterName: 'ห้องตรวจ 1',
     systemTitle: 'ระบบเรียกคิวห้องตรวจ',
+    queueStartNumber: 1,
   },
   pharmacy: {
     counterName: 'ช่องยา 1',
     systemTitle: 'ระบบเรียกคิวห้องยา',
+    queueStartNumber: 1,
   },
 };
+
+function normalizeQueueStartNumber(value: unknown, fallback = 1) {
+  const numberValue = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(numberValue)) return fallback;
+  return Math.max(1, Math.floor(numberValue));
+}
 
 function loadSettings(): Settings {
   try {
@@ -30,10 +39,12 @@ function loadSettings(): Settings {
       exam: {
         counterName: data?.exam?.counterName ?? defaultSettings.exam.counterName,
         systemTitle: data?.exam?.systemTitle ?? defaultSettings.exam.systemTitle,
+        queueStartNumber: normalizeQueueStartNumber(data?.exam?.queueStartNumber, defaultSettings.exam.queueStartNumber),
       },
       pharmacy: {
         counterName: data?.pharmacy?.counterName ?? defaultSettings.pharmacy.counterName,
         systemTitle: data?.pharmacy?.systemTitle ?? defaultSettings.pharmacy.systemTitle,
+        queueStartNumber: normalizeQueueStartNumber(data?.pharmacy?.queueStartNumber, defaultSettings.pharmacy.queueStartNumber),
       },
     };
   } catch {
@@ -47,10 +58,12 @@ function saveSettingsFromState(state: State) {
       exam: {
         counterName: state.exam.counterName,
         systemTitle: state.exam.systemTitle,
+        queueStartNumber: state.exam.queueStartNumber,
       },
       pharmacy: {
         counterName: state.pharmacy.counterName,
         systemTitle: state.pharmacy.systemTitle,
+        queueStartNumber: state.pharmacy.queueStartNumber,
       },
     };
     ensureDir(dataPath());
@@ -75,6 +88,7 @@ type RoomState = {
   tailNumber: number;
   counterName: string;
   systemTitle: string;
+  queueStartNumber: number;
 };
 type State = Record<Room, RoomState>;
 
@@ -86,17 +100,19 @@ if (!g.__MULTI_QUEUE_STATE__) {
       current: null,
       currentCall: null,
       items: [],
-      tailNumber: 0,
+      tailNumber: s.exam.queueStartNumber - 1,
       counterName: s.exam.counterName,
       systemTitle: s.exam.systemTitle,
+      queueStartNumber: s.exam.queueStartNumber,
     },
     pharmacy: {
       current: null,
       currentCall: null,
       items: [],
-      tailNumber: 0,
+      tailNumber: s.pharmacy.queueStartNumber - 1,
       counterName: s.pharmacy.counterName,
       systemTitle: s.pharmacy.systemTitle,
+      queueStartNumber: s.pharmacy.queueStartNumber,
     },
   } as State;
 }
@@ -104,10 +120,16 @@ export const state: State = g.__MULTI_QUEUE_STATE__;
 
 for (const room of ['exam', 'pharmacy'] as Room[]) {
   state[room].currentCall ??= null;
+  state[room].queueStartNumber ??= defaultSettings[room].queueStartNumber;
 }
 
-export function addQueue(room: Room): QueueItem {
+export function addQueue(room: Room, startNumber?: number): QueueItem {
   const st = state[room];
+  if (startNumber !== undefined && st.current === null && st.items.length === 0) {
+    st.queueStartNumber = normalizeQueueStartNumber(startNumber, st.queueStartNumber);
+    st.tailNumber = st.queueStartNumber - 1;
+    saveSettingsFromState(state);
+  }
   const num = ++st.tailNumber;
   const item: QueueItem = { number: num, status: 'waiting', createdAt: Date.now() };
   st.items.push(item);
@@ -123,6 +145,7 @@ export function getSnapshot(room: Room) {
     tailNumber: st.tailNumber,
     counterName: st.counterName,
     systemTitle: st.systemTitle,
+    queueStartNumber: st.queueStartNumber,
   };
 }
 
@@ -142,11 +165,10 @@ export function nextQueue(room: Room) {
     const cur = st.items.find(i => i.number === st.current);
     if (cur && cur.status === 'calling') cur.status = 'done';
   }
-  const next = st.items.find(i => i.status === 'waiting');
+  let next = st.items.find(i => i.status === 'waiting');
   if (!next) {
-    st.current = null;
-    notifyQueue(room);
-    return null;
+    next = { number: ++st.tailNumber, status: 'waiting', createdAt: Date.now() };
+    st.items.push(next);
   }
   next.status = 'calling';
   st.current = next.number;
@@ -200,7 +222,7 @@ export function resetQueue(room: Room) {
   const st = state[room];
   st.current = null;
   st.items = [];
-  st.tailNumber = 0;
+  st.tailNumber = st.queueStartNumber - 1;
   notifyQueue(room);
 }
 
@@ -212,6 +234,16 @@ export function setCounterName(room: Room, name: string) {
 
 export function setSystemTitle(room: Room, title: string) {
   state[room].systemTitle = title || defaultSettings[room].systemTitle;
+  saveSettingsFromState(state);
+  notifyQueue(room);
+}
+
+export function setQueueStartNumber(room: Room, value: number) {
+  const st = state[room];
+  st.queueStartNumber = normalizeQueueStartNumber(value, defaultSettings[room].queueStartNumber);
+  if (st.current === null && st.items.length === 0) {
+    st.tailNumber = st.queueStartNumber - 1;
+  }
   saveSettingsFromState(state);
   notifyQueue(room);
 }

@@ -10,6 +10,7 @@ type Snapshot = {
   tailNumber: number;
   counterName: string;
   systemTitle: string;
+  queueStartNumber: number;
 };
 
 export default function Page() {
@@ -22,12 +23,21 @@ export default function Page() {
     exam: 'กรุณาติดต่อห้องตรวจ',
     pharmacy: 'กรุณาติดต่อรับยา',
   });
+  const [queueStartNumbers, setQueueStartNumbers] = React.useState<Record<Room, number>>({
+    exam: 1,
+    pharmacy: 1,
+  });
 
   const setRoomTitle = React.useCallback((room: Room, title: string) => {
     setSystemTitles((prev) => ({ ...prev, [room]: title }));
   }, []);
+  const setRoomQueueStartNumber = React.useCallback((room: Room, value: number) => {
+    setQueueStartNumbers((prev) => ({ ...prev, [room]: value }));
+  }, []);
   const handleExamTitleLoaded = React.useCallback((title: string) => setRoomTitle('exam', title), [setRoomTitle]);
   const handlePharmacyTitleLoaded = React.useCallback((title: string) => setRoomTitle('pharmacy', title), [setRoomTitle]);
+  const handleExamQueueStartNumberLoaded = React.useCallback((value: number) => setRoomQueueStartNumber('exam', value), [setRoomQueueStartNumber]);
+  const handlePharmacyQueueStartNumberLoaded = React.useCallback((value: number) => setRoomQueueStartNumber('pharmacy', value), [setRoomQueueStartNumber]);
 
   return (
     <main style={pageStyle}>
@@ -38,19 +48,25 @@ export default function Page() {
             title={systemTitles.exam}
             roomLabel="คิวห้องตรวจ"
             tail={tails.exam}
+            queueStartNumber={queueStartNumbers.exam}
             onTitleLoaded={handleExamTitleLoaded}
+            onQueueStartNumberLoaded={handleExamQueueStartNumberLoaded}
           />
           <QueueControl
             room="pharmacy"
             title={systemTitles.pharmacy}
             roomLabel="คิวห้องจ่ายยา"
             tail={tails.pharmacy}
+            queueStartNumber={queueStartNumbers.pharmacy}
             onTitleLoaded={handlePharmacyTitleLoaded}
+            onQueueStartNumberLoaded={handlePharmacyQueueStartNumberLoaded}
           />
         </div>
         <AudioAnnouncer
           systemTitles={systemTitles}
+          queueStartNumbers={queueStartNumbers}
           setSystemTitles={setSystemTitles}
+          setQueueStartNumbers={setQueueStartNumbers}
           tails={tails}
           setTails={setTails}
         />
@@ -80,13 +96,17 @@ function QueueControl({
   title,
   roomLabel,
   tail,
+  queueStartNumber,
   onTitleLoaded,
+  onQueueStartNumberLoaded,
 }: {
   room: Room;
   title: string;
   roomLabel: string;
   tail: string;
+  queueStartNumber: number;
   onTitleLoaded: (title: string) => void;
+  onQueueStartNumberLoaded: (value: number) => void;
 }) {
   const [snap, setSnap] = React.useState<Snapshot | null>(null);
   const [loading, setLoading] = React.useState(false);
@@ -96,7 +116,8 @@ function QueueControl({
     const data: Snapshot = await res.json();
     setSnap(data);
     if (data.systemTitle) onTitleLoaded(data.systemTitle);
-  }, [room, onTitleLoaded]);
+    if (data.queueStartNumber) onQueueStartNumberLoaded(data.queueStartNumber);
+  }, [room, onTitleLoaded, onQueueStartNumberLoaded]);
 
   React.useEffect(() => {
     refresh();
@@ -105,6 +126,7 @@ function QueueControl({
       const data: Snapshot = JSON.parse(event.data);
       setSnap(data);
       if (data.systemTitle) onTitleLoaded(data.systemTitle);
+      if (data.queueStartNumber) onQueueStartNumberLoaded(data.queueStartNumber);
     };
     return () => events.close();
   }, [refresh]);
@@ -133,7 +155,7 @@ function QueueControl({
       const res = await fetch(`/api/queue?room=${room}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'add' }),
+        body: JSON.stringify({ action: 'add', queueStartNumber }),
       });
       if (!res.ok) throw new Error('add queue failed');
       const data = await res.json();

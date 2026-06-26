@@ -1,7 +1,7 @@
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getSnapshot, setCounterName, setSystemTitle } from '@/lib/store';
+import { getSnapshot, setCounterName, setQueueStartNumber, setSystemTitle } from '@/lib/store';
 import { Room } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -13,8 +13,8 @@ function getRoom(req: NextRequest): Room {
 
 export async function GET(req: NextRequest) {
   const room = getRoom(req);
-  const { counterName, systemTitle } = getSnapshot(room);
-  return NextResponse.json({ counterName, systemTitle });
+  const { counterName, systemTitle, queueStartNumber } = getSnapshot(room);
+  return NextResponse.json({ counterName, systemTitle, queueStartNumber });
 }
 
 export async function POST(req: NextRequest) {
@@ -29,9 +29,17 @@ export async function POST(req: NextRequest) {
     setSystemTitle(room, body.systemTitle.trim());
     updated = true;
   }
-  if (updated) {
-    const { counterName, systemTitle } = getSnapshot(room);
-    return NextResponse.json({ ok: true, counterName, systemTitle });
+  if (body.queueStartNumber !== undefined) {
+    const queueStartNumber = Number(body.queueStartNumber);
+    if (!Number.isFinite(queueStartNumber) || queueStartNumber < 1) {
+      return NextResponse.json({ ok: false, error: 'queueStartNumber must be at least 1' }, { status: 400 });
+    }
+    setQueueStartNumber(room, queueStartNumber);
+    updated = true;
   }
-  return NextResponse.json({ ok: false, error: 'counterName or systemTitle is required' }, { status: 400 });
+  if (updated) {
+    const { counterName, systemTitle, queueStartNumber } = getSnapshot(room);
+    return NextResponse.json({ ok: true, counterName, systemTitle, queueStartNumber });
+  }
+  return NextResponse.json({ ok: false, error: 'counterName, systemTitle, or queueStartNumber is required' }, { status: 400 });
 }

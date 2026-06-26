@@ -18,7 +18,11 @@ export async function POST(req: NextRequest) {
   const room = getRoom(req);
   const body = await req.json().catch(() => ({}));
   if (body.action === 'add') {
-    const item = addQueue(room);
+    const startNumber = body.queueStartNumber === undefined ? undefined : Number(body.queueStartNumber);
+    if (startNumber !== undefined && (!Number.isFinite(startNumber) || startNumber < 1)) {
+      return NextResponse.json({ ok: false, error: 'queueStartNumber must be at least 1' }, { status: 400 });
+    }
+    const item = addQueue(room, startNumber);
     return NextResponse.json({ ok: true, added: item });
   }
   if (body.action === 'reset') {
